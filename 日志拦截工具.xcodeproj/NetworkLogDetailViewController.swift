@@ -1,0 +1,304 @@
+//
+//  NetworkLogDetailViewController.swift
+//  日志拦截工具
+//
+//  网络日志详情页面
+//
+
+import UIKit
+
+class NetworkLogDetailViewController: UIViewController {
+    
+    var request: InterceptedRequest!
+    
+    private var scrollView: UIScrollView!
+    private var contentView: UIView!
+    private var tabButtonsContainer: UIView!
+    private var tabButtons: [UIButton] = []
+    private var selectedTabIndex: Int = 0
+    private var textView: UITextView!
+    private var closeButton: UIButton!
+    
+    private let tabTitles = ["基本信息", "URL信息", "请求Headers", "请求Body", "响应Headers", "响应Body", "异常信息"]
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        displayBasicInfo()
+    }
+    
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
+        
+        // 顶部工具栏
+        let toolBar = UIView()
+        toolBar.backgroundColor = .systemBackground
+        toolBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(toolBar)
+        
+        // 关闭按钮
+        closeButton = UIButton(type: .system)
+        closeButton.setTitle("关闭", for: .normal)
+        closeButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        toolBar.addSubview(closeButton)
+        
+        // 标题
+        let titleLabel = UILabel()
+        titleLabel.text = "详情"
+        titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        titleLabel.textAlignment = .center
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        toolBar.addSubview(titleLabel)
+        
+        // 标签按钮容器（支持换行）
+        tabButtonsContainer = UIView()
+        tabButtonsContainer.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tabButtonsContainer)
+        
+        setupTabButtons()
+        
+        // 滚动视图
+        scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
+        
+        // 内容视图
+        contentView = UIView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentView)
+        
+        // 文本视图
+        textView = UITextView()
+        textView.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+        textView.isEditable = false
+        textView.backgroundColor = .secondarySystemBackground
+        textView.layer.cornerRadius = 8
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(textView)
+        
+        // 布局
+        NSLayoutConstraint.activate([
+            toolBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            toolBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toolBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolBar.heightAnchor.constraint(equalToConstant: 50),
+            
+            closeButton.leadingAnchor.constraint(equalTo: toolBar.leadingAnchor, constant: 16),
+            closeButton.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
+            
+            titleLabel.centerXAnchor.constraint(equalTo: toolBar.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
+            
+            tabButtonsContainer.topAnchor.constraint(equalTo: toolBar.bottomAnchor, constant: 8),
+            tabButtonsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
+            tabButtonsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            tabButtonsContainer.heightAnchor.constraint(equalToConstant: 70),
+            
+            scrollView.topAnchor.constraint(equalTo: tabButtonsContainer.bottomAnchor, constant: 8),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            
+            textView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            textView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            textView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            textView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: 400)
+        ])
+    }
+    
+    private func setupTabButtons() {
+        let buttonHeight: CGFloat = 32
+        let spacing: CGFloat = 8
+        let containerWidth = view.bounds.width - 24 // 减去左右边距
+        
+        var xOffset: CGFloat = 0
+        var yOffset: CGFloat = 0
+        
+        for (index, title) in tabTitles.enumerated() {
+            let button = UIButton(type: .system)
+            button.setTitle(title, for: .normal)
+            button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+            button.tag = index
+            button.addTarget(self, action: #selector(tabButtonTapped(_:)), for: .touchUpInside)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            tabButtonsContainer.addSubview(button)
+            
+            // 计算按钮宽度（根据文字自适应）
+            let buttonWidth = (title as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: 14, weight: .medium)]).width + 20
+            
+            // 如果当前行放不下，换行
+            if xOffset + buttonWidth > containerWidth && xOffset > 0 {
+                xOffset = 0
+                yOffset += buttonHeight + spacing
+            }
+            
+            // 设置按钮样式
+            button.layer.cornerRadius = 6
+            button.layer.borderWidth = 1
+            
+            NSLayoutConstraint.activate([
+                button.leadingAnchor.constraint(equalTo: tabButtonsContainer.leadingAnchor, constant: xOffset),
+                button.topAnchor.constraint(equalTo: tabButtonsContainer.topAnchor, constant: yOffset),
+                button.widthAnchor.constraint(equalToConstant: buttonWidth),
+                button.heightAnchor.constraint(equalToConstant: buttonHeight)
+            ])
+            
+            tabButtons.append(button)
+            xOffset += buttonWidth + spacing
+        }
+        
+        // 默认选中第一个
+        updateTabButtonStyles()
+    }
+    
+    private func updateTabButtonStyles() {
+        for (index, button) in tabButtons.enumerated() {
+            if index == selectedTabIndex {
+                // 选中状态
+                button.backgroundColor = .systemBlue
+                button.setTitleColor(.white, for: .normal)
+                button.layer.borderColor = UIColor.systemBlue.cgColor
+            } else {
+                // 未选中状态
+                button.backgroundColor = .clear
+                button.setTitleColor(.systemBlue, for: .normal)
+                button.layer.borderColor = UIColor.systemGray4.cgColor
+            }
+        }
+    }
+    
+    @objc private func tabButtonTapped(_ sender: UIButton) {
+        selectedTabIndex = sender.tag
+        updateTabButtonStyles()
+        
+        // 显示对应内容
+        switch selectedTabIndex {
+        case 0:
+            displayBasicInfo()
+        case 1:
+            displayURLInfo()
+        case 2:
+            displayRequestHeaders()
+        case 3:
+            displayRequestBody()
+        case 4:
+            displayResponseHeaders()
+        case 5:
+            displayResponseBody()
+        case 6:
+            displayErrorInfo()
+        default:
+            break
+        }
+    }
+    
+    @objc private func closeTapped() {
+        dismiss(animated: true)
+    }
+    
+    private func displayBasicInfo() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        
+        var info = """
+        时间: \(formatter.string(from: request.startTime))
+        
+        路由: \(request.path)
+        
+        请求类型: \(request.method)
+        
+        """
+        
+        if let statusCode = request.statusCode {
+            info += "状态码: \(statusCode)\n\n"
+        }
+        
+        if let duration = request.duration {
+            info += "耗时: \(String(format: "%.0fms", duration * 1000))\n\n"
+        }
+        
+        info += "日志ID: \(request.id)\n\n"
+        info += "URL短链接: \(request.path)"
+        
+        textView.text = info
+    }
+    
+    private func displayURLInfo() {
+        var info = "完整URL:\n\(request.url)\n\n"
+        
+        if !request.queryParameters.isEmpty {
+            info += "URL参数 (\(request.queryParameters.count)):\n"
+            for (key, value) in request.queryParameters.sorted(by: { $0.key < $1.key }) {
+                info += "\(key): \(value)\n"
+            }
+        } else {
+            info += "无URL参数"
+        }
+        
+        textView.text = info
+    }
+    
+    private func displayRequestHeaders() {
+        if request.headers.isEmpty {
+            textView.text = "无请求Headers"
+            return
+        }
+        
+        var info = "请求Headers (\(request.headers.count)):\n\n"
+        for (key, value) in request.headers.sorted(by: { $0.key < $1.key }) {
+            info += "\(key): \(value)\n"
+        }
+        
+        textView.text = info
+    }
+    
+    private func displayRequestBody() {
+        if let bodyString = request.requestBodyString {
+            textView.text = bodyString
+        } else if request.body != nil {
+            textView.text = "无法解析请求Body（可能是二进制数据）"
+        } else {
+            textView.text = "无请求Body"
+        }
+    }
+    
+    private func displayResponseHeaders() {
+        if let headers = request.responseHeaders, !headers.isEmpty {
+            var info = "响应Headers (\(headers.count)):\n\n"
+            for (key, value) in headers.sorted(by: { $0.key < $1.key }) {
+                info += "\(key): \(value)\n"
+            }
+            textView.text = info
+        } else {
+            textView.text = "无响应Headers"
+        }
+    }
+    
+    private func displayResponseBody() {
+        if let bodyString = request.responseBodyString {
+            textView.text = bodyString
+        } else if request.responseData != nil {
+            textView.text = "无法解析响应Body（可能是二进制数据）"
+        } else {
+            textView.text = "无响应Body"
+        }
+    }
+    
+    private func displayErrorInfo() {
+        if let error = request.error {
+            textView.text = "错误信息:\n\n\(error)"
+        } else {
+            textView.text = "无异常信息"
+        }
+    }
+}
