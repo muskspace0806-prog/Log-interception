@@ -7,14 +7,14 @@
 
 import Foundation
 
-enum WebSocketMessageType: String {
+public enum WebSocketMessageType: String {
     case connect = "连接"
     case disconnect = "断开"
     case send = "发送"
     case receive = "接收"
     case error = "错误"
     
-    var emoji: String {
+    public var emoji: String {
         switch self {
         case .connect: return "🔗"
         case .disconnect: return "🔌"
@@ -24,7 +24,7 @@ enum WebSocketMessageType: String {
         }
     }
     
-    var color: String {
+    public var color: String {
         switch self {
         case .connect: return "green"
         case .disconnect: return "gray"
@@ -35,22 +35,22 @@ enum WebSocketMessageType: String {
     }
 }
 
-struct WebSocketMessage: Identifiable {
-    let id: String
-    let url: String
-    let type: WebSocketMessageType
-    let data: Any?
-    let timestamp: Date
+public struct WebSocketMessage: Identifiable {
+    public let id: String
+    public let url: String
+    public let type: WebSocketMessageType
+    public let data: Any?
+    public let timestamp: Date
     
     // 格式化时间
-    var timeString: String {
+    public var timeString: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter.string(from: timestamp)
     }
     
     // 数据字符串
-    var dataString: String {
+    public var dataString: String {
         guard let data = data else { return "-" }
         
         // 如果是 Data 类型
@@ -81,7 +81,7 @@ struct WebSocketMessage: Identifiable {
     }
     
     // 数据预览（用于列表显示）
-    var dataPreview: String {
+    public var dataPreview: String {
         let fullString = dataString
         if fullString.count > 100 {
             return String(fullString.prefix(100)) + "..."
@@ -90,7 +90,7 @@ struct WebSocketMessage: Identifiable {
     }
     
     // 数据大小
-    var dataSize: String {
+    public var dataSize: String {
         guard let data = data else { return "-" }
         
         var size = 0
@@ -110,14 +110,14 @@ struct WebSocketMessage: Identifiable {
     }
     
     // URL 路径
-    var path: String {
+    public var path: String {
         guard let url = URL(string: url) else { return url }
         return url.path.isEmpty ? "/" : url.path
     }
     
     // 主机名
-    var host: String {
+    public var host: String {
         guard let url = URL(string: url) else { return url }
-        return url.host ?? ""
+        return url.host ?? url
     }
 }
