@@ -118,6 +118,6 @@ public struct WebSocketMessage: Identifiable {
     // 主机名
     public var host: String {
         guard let url = URL(string: url) else { return url }
-        return url.host ?? url
+        return url.host ?? url.absoluteString
     }
 }
