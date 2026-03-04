@@ -17,6 +17,7 @@ class NetworkLogDetailViewController: UIViewController {
     private var tabButtons: [UIButton] = []
     private var selectedTabIndex: Int = 0
     private var textView: UITextView!
+    private var copyButton: UIButton!
     private var closeButton: UIButton!
     
     private let tabTitles = ["基本信息", "URL信息", "请求Headers", "请求Body", "响应Headers", "响应Body", "异常信息"]
@@ -79,6 +80,18 @@ class NetworkLogDetailViewController: UIViewController {
         textView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(textView)
         
+        // 复制按钮（浮动在 textView 右上角）
+        copyButton = UIButton(type: .system)
+        copyButton.setTitle("复制", for: .normal)
+        copyButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        copyButton.backgroundColor = .systemBlue
+        copyButton.setTitleColor(.white, for: .normal)
+        copyButton.layer.cornerRadius = 6
+        copyButton.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
+        copyButton.addTarget(self, action: #selector(copyButtonTapped), for: .touchUpInside)
+        copyButton.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(copyButton)
+        
         // 布局
         NSLayoutConstraint.activate([
             toolBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -100,7 +113,7 @@ class NetworkLogDetailViewController: UIViewController {
             scrollView.topAnchor.constraint(equalTo: tabButtonsContainer.bottomAnchor, constant: 8),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
@@ -111,8 +124,11 @@ class NetworkLogDetailViewController: UIViewController {
             textView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
             textView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             textView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            textView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
-            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: 400)
+            textView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
+            textView.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -24),
+            
+            copyButton.topAnchor.constraint(equalTo: textView.topAnchor, constant: 8),
+            copyButton.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -8)
         ])
     }
     
@@ -204,6 +220,21 @@ class NetworkLogDetailViewController: UIViewController {
     
     @objc private func closeTapped() {
         dismiss(animated: true)
+    }
+    
+    @objc private func copyButtonTapped() {
+        // 复制当前显示的内容
+        UIPasteboard.general.string = textView.text
+        
+        // 显示复制成功提示
+        let originalTitle = copyButton.title(for: .normal)
+        copyButton.setTitle("已复制", for: .normal)
+        copyButton.backgroundColor = .systemGreen
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.copyButton.setTitle(originalTitle, for: .normal)
+            self.copyButton.backgroundColor = .systemBlue
+        }
     }
     
     private func displayBasicInfo() {

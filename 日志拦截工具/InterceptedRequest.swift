@@ -41,8 +41,12 @@ struct InterceptedRequest: Identifiable {
     
     // 响应 JSON 字符串
     var responseJSONString: String? {
-        guard let json = responseJSON,
-              let data = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+        guard let json = responseJSON else {
+            return nil
+        }
+        
+        // 使用 prettyPrinted 和 sortedKeys 选项
+        guard let data = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
               let string = String(data: data, encoding: .utf8) else {
             return nil
         }
@@ -55,7 +59,7 @@ struct InterceptedRequest: Identifiable {
         
         // 尝试解析为 JSON
         if let json = try? JSONSerialization.jsonObject(with: body),
-           let data = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+           let data = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
            let string = String(data: data, encoding: .utf8) {
             return string
         }

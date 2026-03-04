@@ -11,15 +11,24 @@ class NetworkLogViewController: UIViewController {
     
     private var tableView: UITableView!
     private var searchBar: UISearchBar!
+    private var typeSegment: UISegmentedControl!  // HTTP/IM 切换
     private var filterSegment: UISegmentedControl!
     private var closeButton: UIButton!
     private var clearButton: UIButton!
     private var exportButton: UIButton!
     
+    private var currentType: LogType = .http
     private var requests: [InterceptedRequest] = []
     private var filteredRequests: [InterceptedRequest] = []
+    private var wsMessages: [WebSocketMessage] = []
+    private var filteredWSMessages: [WebSocketMessage] = []
     private var searchKeyword: String = ""
     private var selectedFilter: String = "全部"
+    
+    enum LogType {
+        case http
+        case websocket
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,7 +56,7 @@ class NetworkLogViewController: UIViewController {
         
         // 标题
         let titleLabel = UILabel()
-        titleLabel.text = "HTTP日志"
+        titleLabel.text = "网络日志"
         titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
         titleLabel.textAlignment = .center
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -76,6 +85,13 @@ class NetworkLogViewController: UIViewController {
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(searchBar)
         
+        // HTTP/IM 切换
+        typeSegment = UISegmentedControl(items: ["HTTP", "IM"])
+        typeSegment.selectedSegmentIndex = 0
+        typeSegment.addTarget(self, action: #selector(typeChanged), for: .valueChanged)
+        typeSegment.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(typeSegment)
+        
         // 过滤器
         filterSegment = UISegmentedControl(items: ["全部", "GET", "POST", "成功", "失败"])
         filterSegment.selectedSegmentIndex = 0
@@ -88,6 +104,7 @@ class NetworkLogViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(NetworkLogCell.self, forCellReuseIdentifier: "NetworkLogCell")
+        tableView.register(WebSocketMessageCell.self, forCellReuseIdentifier: "WebSocketMessageCell")
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 80
         tableView.separatorStyle = .singleLine
@@ -117,7 +134,11 @@ class NetworkLogViewController: UIViewController {
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             
-            filterSegment.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 8),
+            typeSegment.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 8),
+            typeSegment.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            typeSegment.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            filterSegment.topAnchor.constraint(equalTo: typeSegment.bottomAnchor, constant: 8),
             filterSegment.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             filterSegment.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
@@ -130,18 +151,33 @@ class NetworkLogViewController: UIViewController {
     
     private func setupNotification() {
         NotificationCenter.default.addObserver(self, selector: #selector(requestsUpdated), name: .networkRequestIntercepted, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(wsMessagesUpdated), name: .webSocketMessageIntercepted, object: nil)
     }
     
     @objc private func requestsUpdated() {
         loadData()
     }
     
+    @objc private func wsMessagesUpdated() {
+        loadData()
+    }
+    
     private func loadData() {
         requests = NetworkInterceptorManager.shared.getAllRequests()
+        wsMessages = WebSocketInterceptor.interceptedMessages
         applyFilters()
     }
     
     private func applyFilters() {
+        if currentType == .http {
+            applyHTTPFilters()
+        } else {
+            applyWSFilters()
+        }
+        tableView.reloadData()
+    }
+    
+    private func applyHTTPFilters() {
         filteredRequests = requests
         
         // 应用搜索
@@ -162,8 +198,32 @@ class NetworkLogViewController: UIViewController {
         default:
             break
         }
+    }
+    
+    private func applyWSFilters() {
+        filteredWSMessages = wsMessages
         
-        tableView.reloadData()
+        // 应用搜索
+        if !searchKeyword.isEmpty {
+            filteredWSMessages = filteredWSMessages.filter {
+                $0.url.lowercased().contains(searchKeyword.lowercased()) ||
+                $0.dataString.lowercased().contains(searchKeyword.lowercased())
+            }
+        }
+        
+        // 应用过滤器
+        switch selectedFilter {
+        case "连接":
+            filteredWSMessages = filteredWSMessages.filter { $0.type == .connect }
+        case "发送":
+            filteredWSMessages = filteredWSMessages.filter { $0.type == .send }
+        case "接收":
+            filteredWSMessages = filteredWSMessages.filter { $0.type == .receive }
+        case "错误":
+            filteredWSMessages = filteredWSMessages.filter { $0.type == .error }
+        default:
+            break
+        }
     }
     
     @objc private func closeTapped() {
@@ -171,13 +231,43 @@ class NetworkLogViewController: UIViewController {
     }
     
     @objc private func clearTapped() {
-        let alert = UIAlertController(title: "确认清空", message: "确定要清空所有日志记录吗？", preferredStyle: .alert)
+        let message = currentType == .http ? "确定要清空所有 HTTP 日志记录吗？" : "确定要清空所有 IM 消息记录吗？"
+        let alert = UIAlertController(title: "确认清空", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "清空", style: .destructive) { _ in
-            NetworkInterceptorManager.shared.clearAllRequests()
+            if self.currentType == .http {
+                NetworkInterceptorManager.shared.clearAllRequests()
+            } else {
+                WebSocketInterceptor.interceptedMessages.removeAll()
+            }
             self.loadData()
         })
         present(alert, animated: true)
+    }
+    
+    @objc private func typeChanged() {
+        currentType = typeSegment.selectedSegmentIndex == 0 ? .http : .websocket
+        
+        // 更新过滤器选项
+        if currentType == .http {
+            filterSegment.removeAllSegments()
+            filterSegment.insertSegment(withTitle: "全部", at: 0, animated: false)
+            filterSegment.insertSegment(withTitle: "GET", at: 1, animated: false)
+            filterSegment.insertSegment(withTitle: "POST", at: 2, animated: false)
+            filterSegment.insertSegment(withTitle: "成功", at: 3, animated: false)
+            filterSegment.insertSegment(withTitle: "失败", at: 4, animated: false)
+        } else {
+            filterSegment.removeAllSegments()
+            filterSegment.insertSegment(withTitle: "全部", at: 0, animated: false)
+            filterSegment.insertSegment(withTitle: "连接", at: 1, animated: false)
+            filterSegment.insertSegment(withTitle: "发送", at: 2, animated: false)
+            filterSegment.insertSegment(withTitle: "接收", at: 3, animated: false)
+            filterSegment.insertSegment(withTitle: "错误", at: 4, animated: false)
+        }
+        filterSegment.selectedSegmentIndex = 0
+        selectedFilter = "全部"
+        
+        applyFilters()
     }
     
     @objc private func exportTapped() {
@@ -210,20 +300,33 @@ class NetworkLogViewController: UIViewController {
 extension NetworkLogViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filteredRequests.count
+        return currentType == .http ? filteredRequests.count : filteredWSMessages.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "NetworkLogCell", for: indexPath) as! NetworkLogCell
-        cell.configure(with: filteredRequests[indexPath.row])
-        return cell
+        if currentType == .http {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "NetworkLogCell", for: indexPath) as! NetworkLogCell
+            cell.configure(with: filteredRequests[indexPath.row])
+            return cell
+        } else {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "WebSocketMessageCell", for: indexPath) as! WebSocketMessageCell
+            cell.configure(with: filteredWSMessages[indexPath.row])
+            return cell
+        }
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let detailVC = NetworkLogDetailViewController()
-        detailVC.request = filteredRequests[indexPath.row]
-        present(detailVC, animated: true)
+        
+        if currentType == .http {
+            let detailVC = NetworkLogDetailViewController()
+            detailVC.request = filteredRequests[indexPath.row]
+            present(detailVC, animated: true)
+        } else {
+            let detailVC = WebSocketMessageDetailViewController()
+            detailVC.message = filteredWSMessages[indexPath.row]
+            present(detailVC, animated: true)
+        }
     }
 }
 

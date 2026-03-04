@@ -11,10 +11,8 @@ class FloatingButton: UIButton {
     
     // 回调
     var onTap: (() -> Void)?
-    var onLongPress: (() -> Void)?
     
     private var panGesture: UIPanGestureRecognizer!
-    private var longPressGesture: UILongPressGestureRecognizer!
     private var tapGesture: UITapGestureRecognizer!
     
     private var isDragging = false
@@ -53,20 +51,10 @@ class FloatingButton: UIButton {
         panGesture.delegate = self
         addGestureRecognizer(panGesture)
         
-        // 长按手势
-        longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
-        longPressGesture.minimumPressDuration = 0.5
-        longPressGesture.delegate = self
-        addGestureRecognizer(longPressGesture)
-        
         // 点击手势
         tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tapGesture.delegate = self
         addGestureRecognizer(tapGesture)
-        
-        // 设置手势优先级
-        tapGesture.require(toFail: longPressGesture)
-        panGesture.require(toFail: longPressGesture)
     }
     
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -102,25 +90,6 @@ class FloatingButton: UIButton {
         }
     }
     
-    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-        if gesture.state == .began {
-            // 震动反馈
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-            
-            // 动画效果
-            UIView.animate(withDuration: 0.1, animations: {
-                self.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
-            }) { _ in
-                UIView.animate(withDuration: 0.1) {
-                    self.transform = .identity
-                }
-            }
-            
-            onLongPress?()
-        }
-    }
-    
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
         // 点击动画
         UIView.animate(withDuration: 0.1, animations: {
@@ -131,7 +100,11 @@ class FloatingButton: UIButton {
             }
         }
         
-        // 只有设置了回调才执行
+        // 震动反馈
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // 执行回调
         onTap?()
     }
     

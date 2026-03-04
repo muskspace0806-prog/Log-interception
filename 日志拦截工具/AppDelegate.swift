@@ -15,6 +15,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NetworkInterceptorManager.shared.startIntercepting()
         print("✅ 网络拦截已启动")
         
+        // 启动 WebSocket 拦截
+        WebSocketInterceptor.shared.startIntercepting()
+        print("✅ WebSocket 拦截已启动")
+        
         return true
     }
 

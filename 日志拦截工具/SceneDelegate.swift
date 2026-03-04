@@ -27,13 +27,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 创建悬浮按钮
         floatingButton = FloatingButton()
         
-        // 点击事件 - 隐藏按钮
+        // 点击事件 - 显示日志页面
         floatingButton?.onTap = { [weak self] in
-            self?.floatingButton?.hide()
-        }
-        
-        // 长按事件 - 显示日志页面
-        floatingButton?.onLongPress = { [weak self] in
             self?.showNetworkLog()
         }
         
@@ -53,12 +48,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             topVC = presented
         }
         
-        topVC.present(logVC, animated: true) { [weak self] in
-            // 显示日志页面后，重新显示悬浮按钮
-            if let button = self?.floatingButton, button.superview == nil {
-                self?.setupFloatingButton()
-            }
-        }
+        topVC.present(logVC, animated: true)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

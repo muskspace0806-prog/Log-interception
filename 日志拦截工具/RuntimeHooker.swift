@@ -33,9 +33,10 @@ class RuntimeHooker {
         }
         
         // Hook sendSynchronousRequest
-        if let originalSelector = NSSelectorFromString("sendSynchronousRequest:returningResponse:error:"),
-           let swizzledSelector = NSSelectorFromString("swizzled_sendSynchronousRequest:returningResponse:error:"),
-           let originalMethod = class_getClassMethod(connectionClass, originalSelector),
+        let originalSelector = NSSelectorFromString("sendSynchronousRequest:returningResponse:error:")
+        let swizzledSelector = NSSelectorFromString("swizzled_sendSynchronousRequest:returningResponse:error:")
+        
+        if let originalMethod = class_getClassMethod(connectionClass, originalSelector),
            let swizzledMethod = class_getClassMethod(connectionClass, swizzledSelector) {
             method_exchangeImplementations(originalMethod, swizzledMethod)
             print("✅ NSURLConnection Hook 成功")
