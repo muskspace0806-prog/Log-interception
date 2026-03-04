@@ -16,10 +16,10 @@ Features:
 - Zero configuration required
                        DESC
 
-  s.homepage         = 'https://github.com/muskspace0806-prog/ZWB_LogTap'
+  s.homepage         = 'https://github.com/muskspace0806-prog/Log-interception'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'ZWB' => 'muskspace0806@gmail.com' }
-  s.source           = { :git => 'https://github.com/muskspace0806-prog/ZWB_LogTap.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/muskspace0806-prog/Log-interception.git', :tag => s.version.to_s }
   
   s.ios.deployment_target = '13.0'
   s.swift_version = '5.0'
