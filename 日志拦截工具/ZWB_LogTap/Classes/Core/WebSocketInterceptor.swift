@@ -15,6 +15,9 @@ class WebSocketInterceptor {
     static var interceptedMessages: [WebSocketMessage] = []
     static var maxRecords = 1000
     
+    // 线程安全锁
+    private static let lock = NSLock()
+    
     private init() {}
     
     // 开始拦截
@@ -113,6 +116,9 @@ class WebSocketInterceptor {
         )
         
         DispatchQueue.main.async {
+            lock.lock()
+            defer { lock.unlock() }
+            
             interceptedMessages.insert(message, at: 0)
             if interceptedMessages.count > maxRecords {
                 interceptedMessages.removeLast()
@@ -132,6 +138,9 @@ class WebSocketInterceptor {
         )
         
         DispatchQueue.main.async {
+            lock.lock()
+            defer { lock.unlock() }
+            
             interceptedMessages.insert(message, at: 0)
             if interceptedMessages.count > maxRecords {
                 interceptedMessages.removeLast()
@@ -151,6 +160,9 @@ class WebSocketInterceptor {
         )
         
         DispatchQueue.main.async {
+            lock.lock()
+            defer { lock.unlock() }
+            
             interceptedMessages.insert(message, at: 0)
             if interceptedMessages.count > maxRecords {
                 interceptedMessages.removeLast()
@@ -170,6 +182,9 @@ class WebSocketInterceptor {
         )
         
         DispatchQueue.main.async {
+            lock.lock()
+            defer { lock.unlock() }
+            
             interceptedMessages.insert(message, at: 0)
             if interceptedMessages.count > maxRecords {
                 interceptedMessages.removeLast()
@@ -189,6 +204,9 @@ class WebSocketInterceptor {
         )
         
         DispatchQueue.main.async {
+            lock.lock()
+            defer { lock.unlock() }
+            
             interceptedMessages.insert(message, at: 0)
             if interceptedMessages.count > maxRecords {
                 interceptedMessages.removeLast()
