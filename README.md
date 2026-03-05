@@ -68,7 +68,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.0.2', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.0.3', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -81,7 +81,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ZWB_LogTap.git", from: "1.0.2")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.3")
 ]
 ```
 
@@ -197,7 +197,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.0.2', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.0.3', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
