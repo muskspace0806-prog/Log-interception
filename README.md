@@ -25,11 +25,14 @@
 
 ## 📱 预览
 
-**完整截图正在添加中，敬请期待...**
+### HTTP 网络日志
 
-### 主要功能展示
+<p align="center">
+  <img src="Screenshots/http_list.png" width="300" alt="HTTP 列表">
+  <img src="Screenshots/http_detail.png" width="300" alt="HTTP 详情">
+</p>
 
-**HTTP 网络日志**
+**特性：**
 - ✅ 失败请求 URL 自动标红（404、500、网络错误等）
 - ✅ 状态码颜色区分（绿色=成功，红色=错误）
 - ✅ 请求耗时实时显示
@@ -37,14 +40,21 @@
 - ✅ JSON 自动格式化
 - ✅ 完整的请求/响应详情查看
 
-**WebSocket 消息**
+### WebSocket 消息
+
+<p align="center">
+  <img src="Screenshots/im_list.png" width="300" alt="IM 列表">
+  <img src="Screenshots/im_detail.png" width="300" alt="IM 详情">
+</p>
+
+**特性：**
 - ✅ 错误消息 URL 和内容自动标红
 - ✅ 消息类型图标区分（连接、发送、接收、错误）
 - ✅ JSON 自动格式化
 - ✅ 消息大小实时显示
 - ✅ 完整的消息内容查看
 
-**界面特性**
+### 界面特性
 - ✅ 悬浮按钮，可拖拽移动
 - ✅ HTTP/IM 模式快速切换
 - ✅ 搜索和过滤功能
