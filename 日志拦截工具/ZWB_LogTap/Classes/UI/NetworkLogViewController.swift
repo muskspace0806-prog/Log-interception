@@ -149,9 +149,21 @@ class NetworkLogViewController: UIViewController {
         ])
     }
     
+    private var refreshTimer: Timer?
+    
     private func setupNotification() {
         NotificationCenter.default.addObserver(self, selector: #selector(requestsUpdated), name: .networkRequestIntercepted, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(wsMessagesUpdated), name: .webSocketMessageIntercepted, object: nil)
+        
+        // 使用定时器定期刷新 WebSocket 消息，避免通知崩溃
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            guard let self = self, self.currentType == .websocket else { return }
+            self.loadData()
+        }
+    }
+    
+    deinit {
+        refreshTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
     }
     
     @objc private func requestsUpdated() {
@@ -159,7 +171,7 @@ class NetworkLogViewController: UIViewController {
     }
     
     @objc private func wsMessagesUpdated() {
-        loadData()
+        // 不再使用，保留以兼容
     }
     
     private func loadData() {
@@ -238,7 +250,7 @@ class NetworkLogViewController: UIViewController {
             if self.currentType == .http {
                 NetworkInterceptorManager.shared.clearAllRequests()
             } else {
-                WebSocketInterceptor.interceptedMessages.removeAll()
+                WebSocketInterceptor.clearAllMessages()
             }
             self.loadData()
         })

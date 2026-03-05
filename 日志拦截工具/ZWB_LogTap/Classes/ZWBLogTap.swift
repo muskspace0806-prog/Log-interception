@@ -26,8 +26,11 @@ public class ZWBLogTap {
         /// 是否拦截 HTTP 请求
         public var interceptHTTP: Bool = true
         
-        /// 是否拦截 WebSocket
-        public var interceptWebSocket: Bool = true
+        /// ⚠️ WebSocket 拦截功能已禁用（技术限制，无法实现）
+        /// 由于 Method Swizzling 在 Swift 环境下的严重不稳定性，此功能已永久禁用
+        /// 建议使用 Charles/Proxyman 等专业工具调试 WebSocket
+        @available(*, deprecated, message: "WebSocket 拦截功能不可用，请使用专业工具")
+        public var interceptWebSocket: Bool = false
         
         /// 最大记录数
         public var maxRecords: Int = 1000
@@ -67,11 +70,12 @@ public class ZWBLogTap {
             print("✅ HTTP 拦截已启动")
         }
         
-        // 启动 WebSocket 拦截
+        // 启动 WebSocket 拦截（已禁用）
         if configuration.interceptWebSocket {
-            WebSocketInterceptor.shared.startIntercepting()
-            WebSocketInterceptor.maxRecords = configuration.maxRecords
-            print("✅ WebSocket 拦截已启动")
+            print("⚠️ WebSocket 拦截功能已禁用（技术限制）")
+            print("⚠️ 建议使用 Charles/Proxyman 等专业工具调试 WebSocket")
+            // WebSocketInterceptor.shared.startIntercepting()
+            // WebSocketInterceptor.maxRecords = configuration.maxRecords
         }
         
         // 显示悬浮按钮
@@ -115,7 +119,7 @@ public class ZWBLogTap {
     /// 清空所有日志
     public func clearAllLogs() {
         NetworkInterceptorManager.shared.clearAllRequests()
-        WebSocketInterceptor.interceptedMessages.removeAll()
+        WebSocketInterceptor.clearAllMessages()
         print("✅ 已清空所有日志")
     }
     
@@ -127,6 +131,46 @@ public class ZWBLogTap {
     /// 获取所有 WebSocket 消息
     public func getAllWebSocketMessages() -> [WebSocketMessage] {
         return WebSocketInterceptor.interceptedMessages
+    }
+    
+    // MARK: - 手动 WebSocket 日志记录 API
+    
+    /// 记录 WebSocket 连接
+    /// - Parameter url: WebSocket URL
+    public static func logWebSocketConnect(url: String) {
+        WebSocketInterceptor.logConnection(url: url)
+    }
+    
+    /// 记录 WebSocket 发送消息
+    /// - Parameters:
+    ///   - url: WebSocket URL
+    ///   - message: 发送的消息（String 或 Data）
+    public static func logWebSocketSend(url: String, message: Any) {
+        WebSocketInterceptor.logSend(url: url, data: message)
+    }
+    
+    /// 记录 WebSocket 接收消息
+    /// - Parameters:
+    ///   - url: WebSocket URL
+    ///   - message: 接收的消息（String 或 Data）
+    public static func logWebSocketReceive(url: String, message: Any) {
+        WebSocketInterceptor.logReceive(url: url, data: message)
+    }
+    
+    /// 记录 WebSocket 断开连接
+    /// - Parameters:
+    ///   - url: WebSocket URL
+    ///   - reason: 断开原因（可选）
+    public static func logWebSocketDisconnect(url: String, reason: String? = nil) {
+        WebSocketInterceptor.logDisconnect(url: url, reason: reason)
+    }
+    
+    /// 记录 WebSocket 错误
+    /// - Parameters:
+    ///   - url: WebSocket URL
+    ///   - error: 错误信息
+    public static func logWebSocketError(url: String, error: String) {
+        WebSocketInterceptor.logError(url: url, error: error)
     }
     
     /// 导出日志为 JSON
@@ -172,7 +216,7 @@ public extension ZWBLogTap {
     static func start(
         showFloatingButton: Bool = true,
         interceptHTTP: Bool = true,
-        interceptWebSocket: Bool = true,
+        interceptWebSocket: Bool = false,  // 默认关闭 WebSocket
         maxRecords: Int = 1000
     ) {
         var config = Configuration()

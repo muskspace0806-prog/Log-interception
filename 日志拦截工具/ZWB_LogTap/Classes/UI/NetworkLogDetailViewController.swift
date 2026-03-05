@@ -76,7 +76,8 @@ class NetworkLogDetailViewController: UIViewController {
         textView.isEditable = false
         textView.backgroundColor = .secondarySystemBackground
         textView.layer.cornerRadius = 8
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        // 顶部留出空间给复制按钮（按钮高度约 32，加上间距）
+        textView.textContainerInset = UIEdgeInsets(top: 48, left: 12, bottom: 12, right: 12)
         textView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(textView)
         
@@ -108,7 +109,7 @@ class NetworkLogDetailViewController: UIViewController {
             tabButtonsContainer.topAnchor.constraint(equalTo: toolBar.bottomAnchor, constant: 8),
             tabButtonsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             tabButtonsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            tabButtonsContainer.heightAnchor.constraint(equalToConstant: 70),
+            tabButtonsContainer.heightAnchor.constraint(equalToConstant: 120), // 增加到 120 以容纳三行按钮
             
             scrollView.topAnchor.constraint(equalTo: tabButtonsContainer.bottomAnchor, constant: 8),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),

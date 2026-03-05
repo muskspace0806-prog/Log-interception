@@ -100,7 +100,7 @@ class WebSocketMessageDetailViewController: UIViewController {
         
         // 消息内容
         if message.type == .send || message.type == .receive {
-            addSection(title: "消息内容", content: message.dataString)
+            addSection(title: "消息内容", content: message.formattedDataString)
         } else if message.type == .error || message.type == .disconnect {
             addSection(title: "详细信息", content: message.dataString)
         }
@@ -224,7 +224,7 @@ class WebSocketMessageDetailViewController: UIViewController {
         // 只复制消息内容
         let content: String
         if message.type == .send || message.type == .receive {
-            content = message.dataString
+            content = message.formattedDataString
         } else if message.type == .error || message.type == .disconnect {
             content = message.dataString
         } else {

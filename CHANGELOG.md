@@ -5,6 +5,35 @@ All notable changes to ZWB_LogTap will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-03-05
+
+### Added
+- ✅ Alamofire 自动拦截支持 - 无需配置，自动拦截所有 Alamofire 请求
+- ✅ WebSocket 手动日志记录 API - 5 个简单方法，稳定可靠
+  - `ZWBLogTap.logWebSocketConnect(url:)` - 记录连接
+  - `ZWBLogTap.logWebSocketSend(url:message:)` - 记录发送
+  - `ZWBLogTap.logWebSocketReceive(url:message:)` - 记录接收
+  - `ZWBLogTap.logWebSocketDisconnect(url:reason:)` - 记录断开
+  - `ZWBLogTap.logWebSocketError(url:error:)` - 记录错误
+
+### Changed
+- ⚠️ WebSocket 自动拦截已禁用 - 由于 Method Swizzling 技术限制导致崩溃
+- 📝 改用手动日志记录方式 - 更稳定、零崩溃、易维护
+- 🎨 优化详情页面布局 - 支持小屏幕设备，按钮容器高度增加到 120
+
+### Fixed
+- 🐛 修复 URLSessionConfiguration Hook 的类型推断问题
+- 🐛 修复详情页面标签按钮在小屏幕上被内容遮挡的问题
+- 🐛 修复内容区域底部约束，确保填充到安全区域
+- 🐛 修复 textView 内边距，避免与复制按钮重叠
+
+### Documentation
+- 📖 新增 [WebSocket 手动日志记录完整指南](WEBSOCKET_MANUAL_LOGGING.md)
+- 📖 新增 [WebSocket 快速参考](QUICK_WEBSOCKET_GUIDE.md)
+- 📖 新增 [Alamofire 和 SocketRocket 支持说明](ALAMOFIRE_SOCKETROCKET_GUIDE.md)
+- 📖 新增 [WebSocket 技术限制说明](WEBSOCKET_NOT_SUPPORTED.md)
+- 📖 更新 README - 说明 WebSocket 使用方式和替代方案
+
 ## [1.0.3] - 2026-03-04
 
 ### Added

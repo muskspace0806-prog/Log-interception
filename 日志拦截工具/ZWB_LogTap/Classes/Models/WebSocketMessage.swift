@@ -39,8 +39,30 @@ public struct WebSocketMessage: Identifiable {
     public let id: String
     public let url: String
     public let type: WebSocketMessageType
-    public let data: Any?
+    public let dataString: String  // 改为直接存储字符串
     public let timestamp: Date
+    
+    // 初始化时转换 data
+    public init(id: String, url: String, type: WebSocketMessageType, data: Any?, timestamp: Date) {
+        self.id = id
+        self.url = url
+        self.type = type
+        self.timestamp = timestamp
+        
+        // 安全地转换为字符串
+        self.dataString = Self.convertDataToString(data)
+    }
+    
+    // 静态方法：安全地转换数据为字符串 - 极简版本
+    private static func convertDataToString(_ data: Any?) -> String {
+        // 不使用 guard，不使用 autoreleasepool，不使用 try-catch
+        if data == nil {
+            return "-"
+        }
+        
+        // 直接转换为字符串，不做任何复杂操作
+        return String(describing: data!)
+    }
     
     // 格式化时间
     public var timeString: String {
@@ -49,56 +71,29 @@ public struct WebSocketMessage: Identifiable {
         return formatter.string(from: timestamp)
     }
     
-    // 数据字符串
-    public var dataString: String {
-        guard let data = data else { return "-" }
-        
-        // 如果是 Data 类型
-        if let dataObj = data as? Data {
-            // 尝试解析为 JSON
-            if let json = try? JSONSerialization.jsonObject(with: dataObj),
-               let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
-               let string = String(data: jsonData, encoding: .utf8) {
-                return string
-            }
-            // 否则返回原始字符串
-            return String(data: dataObj, encoding: .utf8) ?? "二进制数据"
+    // 格式化的数据字符串（尝试 JSON 美化）
+    public var formattedDataString: String {
+        // 尝试格式化 JSON
+        if let jsonData = dataString.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: jsonData),
+           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+           let prettyString = String(data: prettyData, encoding: .utf8) {
+            return prettyString
         }
-        
-        // 如果是 String 类型
-        if let string = data as? String {
-            // 尝试解析为 JSON
-            if let jsonData = string.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: jsonData),
-               let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
-               let prettyString = String(data: prettyData, encoding: .utf8) {
-                return prettyString
-            }
-            return string
-        }
-        
-        return String(describing: data)
+        return dataString
     }
     
     // 数据预览（用于列表显示）
     public var dataPreview: String {
-        let fullString = dataString
-        if fullString.count > 100 {
-            return String(fullString.prefix(100)) + "..."
+        if dataString.count > 100 {
+            return String(dataString.prefix(100)) + "..."
         }
-        return fullString
+        return dataString
     }
     
     // 数据大小
     public var dataSize: String {
-        guard let data = data else { return "-" }
-        
-        var size = 0
-        if let dataObj = data as? Data {
-            size = dataObj.count
-        } else if let string = data as? String {
-            size = string.utf8.count
-        }
+        let size = dataString.utf8.count
         
         if size < 1024 {
             return "\(size) B"

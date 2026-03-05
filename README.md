@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.0.3-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.0.4-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -12,8 +12,9 @@
 
 ## ✨ 功能特性
 
-- ✅ **HTTP/HTTPS 拦截** - 拦截所有 URLSession 网络请求
-- ✅ **WebSocket 支持** - 监控 WebSocket 连接和消息（支持 SocketRocket）
+- ✅ **HTTP/HTTPS 拦截** - 拦截所有 URLSession 网络请求（稳定）
+- ✅ **Alamofire 支持** - 自动拦截 Alamofire 请求（稳定）
+- ❌ **WebSocket 拦截** - 由于技术限制已禁用，建议使用专业工具
 - ✅ **失败请求高亮** - 错误请求 URL 自动标红，一目了然
 - ✅ **实时查看** - 实时显示请求和响应数据
 - ✅ **JSON 格式化** - 自动格式化 JSON 数据，易于阅读
@@ -68,7 +69,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.0.3', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.0.4', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -81,7 +82,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.3")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.4")
 ]
 ```
 
@@ -123,7 +124,6 @@ import ZWB_LogTap
 var config = ZWBLogTap.Configuration()
 config.showFloatingButton = true          // 显示悬浮按钮
 config.interceptHTTP = true               // 拦截 HTTP 请求
-config.interceptWebSocket = true          // 拦截 WebSocket
 config.maxRecords = 1000                  // 最大记录数
 
 ZWBLogTap.shared.start(with: config)
@@ -132,10 +132,42 @@ ZWBLogTap.shared.start(with: config)
 ZWBLogTap.start(
     showFloatingButton: true,
     interceptHTTP: true,
-    interceptWebSocket: true,
     maxRecords: 500
 )
 ```
+
+### ❌ WebSocket 拦截说明
+
+WebSocket 拦截功能由于技术限制已**永久禁用**。
+
+**原因：**
+- Method Swizzling 在 Swift 环境下极度不稳定
+- 即使最简单的操作（print、变量赋值）都会导致崩溃
+- 无法在 SocketRocket 的 Hook 回调中执行任何 Swift 代码
+
+**✅ 推荐方案：手动日志记录**
+
+在你的 SocketRocket delegate 中添加几行代码即可：
+
+```swift
+import SocketRocket
+import ZWB_LogTap
+
+extension MyClass: SRWebSocketDelegate {
+    func webSocket(_ webSocket: SRWebSocket, didReceiveMessage message: Any) {
+        // 📝 添加这一行即可记录
+        ZWBLogTap.logWebSocketReceive(url: wsURL, message: message)
+        
+        // 你的业务逻辑
+    }
+}
+```
+
+详细使用方法请查看：[WebSocket 手动日志记录指南](WEBSOCKET_MANUAL_LOGGING.md)
+
+**其他替代方案：**
+- ✅ **Charles Proxy** - 专业的网络调试工具，完美支持 WebSocket
+- ✅ **Proxyman** - macOS 原生网络调试工具
 
 ## 📖 使用方法
 
