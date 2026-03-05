@@ -5,6 +5,19 @@ All notable changes to ZWB_LogTap will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-03-04
+
+### Added
+- ✅ 错误请求 URL 自动标红显示
+  - HTTP 请求失败（404、500 等状态码）URL 显示为红色
+  - 网络错误（超时、无效域名等）URL 显示为红色
+  - WebSocket 错误消息 URL 和内容显示为红色
+  - 一眼识别失败请求，快速定位问题
+
+### Improved
+- 🎨 优化错误请求的视觉展示效果
+- 🚀 提升调试体验，更易发现和排查问题
+
 ## [1.0.2] - 2026-03-04
 
 ### Added
@@ -60,4 +73,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[1.0.2]: https://github.com/yourusername/ZWB_LogTap/releases/tag/1.0.2
+[1.0.3]: https://github.com/muskspace0806-prog/Log-interception/releases/tag/1.0.3
+[1.0.2]: https://github.com/muskspace0806-prog/Log-interception/releases/tag/1.0.2

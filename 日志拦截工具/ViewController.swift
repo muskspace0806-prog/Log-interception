@@ -66,12 +66,27 @@ class ViewController: UIViewController {
     }
     
     @objc private func testNetworkRequest() {
-        // 测试 GET 请求
+        // 测试成功的 GET 请求
         testGETRequest()
         
-        // 测试 POST 请求
+        // 测试成功的 POST 请求
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.testPOSTRequest()
+        }
+        
+        // 测试 404 错误
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.test404Request()
+        }
+        
+        // 测试 500 错误
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.test500Request()
+        }
+        
+        // 测试网络超时错误
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.testTimeoutRequest()
         }
     }
     
@@ -153,8 +168,13 @@ class ViewController: UIViewController {
             WebSocketInterceptor.logReceive(url: testURL, data: receiveMessage)
         }
         
-        // 模拟再发送一条消息
+        // 模拟连接错误
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            WebSocketInterceptor.logError(url: testURL, error: "连接超时：无法连接到服务器")
+        }
+        
+        // 模拟再发送一条消息
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             let sendMessage2 = """
             {
                 "type": "ping",
@@ -164,8 +184,13 @@ class ViewController: UIViewController {
             WebSocketInterceptor.logSend(url: testURL, data: sendMessage2)
         }
         
+        // 模拟另一个错误
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            WebSocketInterceptor.logError(url: "wss://invalid.example.com", error: "认证失败：Token 已过期")
+        }
+        
         // 模拟接收 pong
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             let receiveMessage2 = """
             {
                 "type": "pong",
@@ -176,8 +201,57 @@ class ViewController: UIViewController {
         }
         
         // 显示提示
-        let alert = UIAlertController(title: "测试IM请求", message: "已模拟发送 WebSocket 消息\n请点击悬浮按钮查看 IM 日志", preferredStyle: .alert)
+        let alert = UIAlertController(title: "测试IM请求", message: "已模拟发送 WebSocket 消息（包含错误）\n请点击悬浮按钮查看 IM 日志", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "确定", style: .default))
         present(alert, animated: true)
+    }
+}
+
+// MARK: - 测试失败请求的方法
+extension ViewController {
+    
+    // 测试 404 错误
+    private func test404Request() {
+        guard let url = URL(string: "https://httpbin.org/status/404") else { return }
+        
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("404 请求失败: \(error)")
+                return
+            }
+            print("404 请求完成")
+        }
+        task.resume()
+    }
+    
+    // 测试 500 错误
+    private func test500Request() {
+        guard let url = URL(string: "https://httpbin.org/status/500") else { return }
+        
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("500 请求失败: \(error)")
+                return
+            }
+            print("500 请求完成")
+        }
+        task.resume()
+    }
+    
+    // 测试网络超时/无效域名
+    private func testTimeoutRequest() {
+        guard let url = URL(string: "https://invalid-domain-that-does-not-exist-12345.com") else { return }
+        
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 5.0
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("超时请求失败: \(error)")
+                return
+            }
+            print("超时请求完成")
+        }
+        task.resume()
     }
 }

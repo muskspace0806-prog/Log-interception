@@ -1,9 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/yourusername/ZWB_LogTap)
-[![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/yourusername/ZWB_LogTap)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CocoaPods](https://img.shields.io/badge/pod-1.0.2-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -13,6 +14,7 @@
 
 - ✅ **HTTP/HTTPS 拦截** - 拦截所有 URLSession 网络请求
 - ✅ **WebSocket 支持** - 监控 WebSocket 连接和消息（支持 SocketRocket）
+- ✅ **失败请求高亮** - 错误请求 URL 自动标红，一目了然
 - ✅ **实时查看** - 实时显示请求和响应数据
 - ✅ **JSON 格式化** - 自动格式化 JSON 数据，易于阅读
 - ✅ **搜索过滤** - 快速搜索和过滤网络请求
@@ -23,9 +25,34 @@
 
 ## 📱 预览
 
-| 悬浮按钮 | HTTP 列表 | HTTP 详情 | WebSocket |
-|---------|----------|----------|-----------|
-| ![](Screenshots/floating_button.png) | ![](Screenshots/http_list.png) | ![](Screenshots/http_detail.png) | ![](Screenshots/websocket.png) |
+### 主界面
+<p align="center">
+  <img src="Screenshots/main_screen.png" width="250" alt="主界面">
+</p>
+
+### HTTP 网络日志
+<p align="center">
+  <img src="Screenshots/http_list.png" width="250" alt="HTTP 列表">
+  <img src="Screenshots/http_detail.png" width="250" alt="HTTP 详情">
+</p>
+
+**特性：**
+- ✅ 失败请求 URL 自动标红（404、500、网络错误等）
+- ✅ 状态码颜色区分（绿色=成功，红色=错误）
+- ✅ 请求耗时实时显示
+- ✅ 支持 GET、POST、PUT、DELETE 等方法
+
+### WebSocket 消息
+<p align="center">
+  <img src="Screenshots/im_list.png" width="250" alt="IM 列表">
+  <img src="Screenshots/im_detail.png" width="250" alt="IM 详情">
+</p>
+
+**特性：**
+- ✅ 错误消息 URL 和内容自动标红
+- ✅ 消息类型图标区分（连接、发送、接收、错误）
+- ✅ JSON 自动格式化
+- ✅ 消息大小实时显示
 
 ## 📦 安装
 
@@ -217,6 +244,13 @@ override class func canInit(with request: URLRequest) -> Bool {
 
 ## 📝 更新日志
 
+### [1.0.3] - 2026-03-04
+
+#### Added
+- 错误请求 URL 自动标红显示
+- WebSocket 错误消息高亮显示
+- 优化错误请求的视觉展示
+
 ### [1.0.2] - 2026-03-04
 
 #### Added
@@ -235,9 +269,11 @@ ZWB_LogTap 使用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
 
 ## 👨‍💻 作者
 
-ZWB - [@ZWB](https://github.com/yourusername)
+ZWB - [@muskspace0806-prog](https://github.com/muskspace0806-prog)
 
-项目链接: [https://github.com/yourusername/ZWB_LogTap](https://github.com/yourusername/ZWB_LogTap)
+项目链接: [https://github.com/muskspace0806-prog/Log-interception](https://github.com/muskspace0806-prog/Log-interception)
+
+CocoaPods: [https://cocoapods.org/pods/ZWB_LogTap](https://cocoapods.org/pods/ZWB_LogTap)
 
 ## 🙏 致谢
 
