@@ -277,7 +277,6 @@ CocoaPods: [https://cocoapods.org/pods/ZWB_LogTap](https://cocoapods.org/pods/ZW
 
 ## 🙏 致谢
 
-- 灵感来源于 Android 的网络调试工具
 - 感谢所有贡献者
 
 ## ⭐️ 支持
