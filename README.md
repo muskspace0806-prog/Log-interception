@@ -350,6 +350,25 @@ override class func canInit(with request: URLRequest) -> Bool {
 
 ## 📝 更新日志
 
+### [1.0.4] - 2026-03-05
+
+#### Added
+- ✅ Alamofire 自动拦截支持 - 无需配置，自动拦截所有 Alamofire 请求
+- ✅ WebSocket 手动日志记录 API - 5 个简单方法，稳定可靠
+  - `ZWBLogTap.logWebSocketConnect(url:)` - 记录连接
+  - `ZWBLogTap.logWebSocketSend(url:message:)` - 记录发送
+  - `ZWBLogTap.logWebSocketReceive(url:message:)` - 记录接收
+  - `ZWBLogTap.logWebSocketDisconnect(url:reason:)` - 记录断开
+  - `ZWBLogTap.logWebSocketError(url:error:)` - 记录错误
+
+#### Changed
+- ⚠️ WebSocket 自动拦截已禁用 - 由于 Method Swizzling 技术限制导致崩溃
+- 📝 改用手动日志记录方式 - 更稳定、零崩溃、易维护
+
+#### Fixed
+- 🐛 修复详情页面标签按钮在小屏幕上被内容遮挡的问题
+- 🐛 修复内容区域底部约束，确保填充到安全区域
+
 ### [1.0.3] - 2026-03-04
 
 #### Added
