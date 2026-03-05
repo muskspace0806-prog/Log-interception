@@ -153,17 +153,85 @@ WebSocket 拦截功能由于技术限制已**永久禁用**。
 import SocketRocket
 import ZWB_LogTap
 
-extension MyClass: SRWebSocketDelegate {
+class MyWebSocketManager: NSObject, SRWebSocketDelegate {
+    
+    var webSocket: SRWebSocket?
+    let wsURL = "wss://echo.websocket.org"
+    
+    // 连接
+    func connect() {
+        let url = URL(string: wsURL)!
+        webSocket = SRWebSocket(url: url)
+        webSocket?.delegate = self
+        webSocket?.open()
+        
+        // 📝 记录连接
+        ZWBLogTap.logWebSocketConnect(url: wsURL)
+    }
+    
+    // 发送消息
+    func sendMessage(_ message: String) {
+        webSocket?.send(message)
+        
+        // 📝 记录发送
+        ZWBLogTap.logWebSocketSend(url: wsURL, message: message)
+    }
+    
+    // MARK: - SRWebSocketDelegate
+    
+    // 接收消息
     func webSocket(_ webSocket: SRWebSocket, didReceiveMessage message: Any) {
-        // 📝 添加这一行即可记录
-        ZWBLogTap.logWebSocketReceive(url: wsURL, message: message)
+        // 📝 记录接收 - 只需添加这一行！
+        ZWBLogTap.logWebSocketReceive(url: webSocket.url?.absoluteString ?? "", message: message)
         
         // 你的业务逻辑
+        if let text = message as? String {
+            print("收到文本: \(text)")
+        }
+    }
+    
+    // 连接失败
+    func webSocket(_ webSocket: SRWebSocket, didFailWithError error: Error) {
+        // 📝 记录错误
+        ZWBLogTap.logWebSocketError(url: webSocket.url?.absoluteString ?? "", error: error.localizedDescription)
+    }
+    
+    // 连接关闭
+    func webSocket(_ webSocket: SRWebSocket, didCloseWithCode code: Int, reason: String?, wasClean: Bool) {
+        // 📝 记录断开
+        ZWBLogTap.logWebSocketDisconnect(url: webSocket.url?.absoluteString ?? "", reason: reason)
     }
 }
 ```
 
-详细使用方法请查看：[WebSocket 手动日志记录指南](WEBSOCKET_MANUAL_LOGGING.md)
+**WebSocket 手动日志 API：**
+
+```swift
+// 1. 记录连接
+ZWBLogTap.logWebSocketConnect(url: "wss://example.com")
+
+// 2. 记录发送
+ZWBLogTap.logWebSocketSend(url: "wss://example.com", message: "Hello")
+
+// 3. 记录接收
+ZWBLogTap.logWebSocketReceive(url: "wss://example.com", message: "World")
+
+// 4. 记录断开
+ZWBLogTap.logWebSocketDisconnect(url: "wss://example.com", reason: "正常关闭")
+
+// 5. 记录错误
+ZWBLogTap.logWebSocketError(url: "wss://example.com", error: "连接超时")
+```
+
+**查看日志：**
+1. 运行应用
+2. 点击右下角悬浮按钮 📊
+3. 切换到 "IM" 标签
+4. 查看所有 WebSocket 消息
+
+**详细文档：**
+- 📖 [WebSocket 手动日志完整指南](WEBSOCKET_MANUAL_LOGGING.md)
+- 📋 [快速参考](QUICK_WEBSOCKET_GUIDE.md)
 
 **其他替代方案：**
 - ✅ **Charles Proxy** - 专业的网络调试工具，完美支持 WebSocket
