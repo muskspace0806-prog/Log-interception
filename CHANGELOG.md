@@ -5,6 +5,16 @@ All notable changes to ZWB_LogTap will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-03-06
+
+### Changed
+- 🎨 完善请求Body展示 - URL参数从"URL信息"tab迁移到"请求Body"tab中展示
+- 📝 优化详情页面布局 - "URL信息"tab现在只显示完整URL
+- 📝 "请求Body"tab现在先显示URL参数，再显示请求Body内容
+
+### Improved
+- 🚀 提升用户体验，信息展示更加合理和直观
+
 ## [1.0.4] - 2026-03-05
 
 ### Added

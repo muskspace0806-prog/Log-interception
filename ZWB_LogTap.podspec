@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'ZWB_LogTap'
-  s.version          = '1.0.4'
+  s.version          = '1.0.5'
   s.summary          = 'A powerful iOS network debugging tool for HTTP/HTTPS with manual WebSocket logging'
   s.description      = <<-DESC
 ZWB_LogTap is a comprehensive iOS debugging tool that helps developers monitor and analyze network traffic in real-time.

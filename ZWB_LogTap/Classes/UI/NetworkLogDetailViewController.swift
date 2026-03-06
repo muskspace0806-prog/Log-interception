@@ -266,18 +266,7 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func displayURLInfo() {
-        var info = "完整URL:\n\(request.url)\n\n"
-        
-        if !request.queryParameters.isEmpty {
-            info += "URL参数 (\(request.queryParameters.count)):\n"
-            for (key, value) in request.queryParameters.sorted(by: { $0.key < $1.key }) {
-                info += "\(key): \(value)\n"
-            }
-        } else {
-            info += "无URL参数"
-        }
-        
-        textView.text = info
+        textView.text = "完整URL:\n\(request.url)"
     }
     
     private func displayRequestHeaders() {
@@ -295,13 +284,35 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func displayRequestBody() {
-        if let bodyString = request.requestBodyString {
-            textView.text = bodyString
-        } else if request.body != nil {
-            textView.text = "无法解析请求Body（可能是二进制数据）"
-        } else {
-            textView.text = "无请求Body"
+        var info = ""
+        
+        // 先显示URL参数
+        if !request.queryParameters.isEmpty {
+            info += "URL参数 (\(request.queryParameters.count)):\n"
+            for (key, value) in request.queryParameters.sorted(by: { $0.key < $1.key }) {
+                info += "\(key): \(value)\n"
+            }
+            info += "\n"
         }
+        
+        // 再显示请求Body
+        if let bodyString = request.requestBodyString {
+            if !info.isEmpty {
+                info += "请求Body:\n"
+            }
+            info += bodyString
+        } else if request.body != nil {
+            if !info.isEmpty {
+                info += "请求Body:\n"
+            }
+            info += "无法解析请求Body（可能是二进制数据）"
+        } else {
+            if info.isEmpty {
+                info = "无URL参数和请求Body"
+            }
+        }
+        
+        textView.text = info
     }
     
     private func displayResponseHeaders() {
