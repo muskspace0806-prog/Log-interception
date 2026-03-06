@@ -17,6 +17,7 @@ class FloatingButton: UIButton {
     
     private var isDragging = false
     private var initialCenter: CGPoint = .zero
+    private var bringToFrontTimer: Timer?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -32,17 +33,41 @@ class FloatingButton: UIButton {
     
     private func setupUI() {
         // 设置按钮样式
-        backgroundColor = UIColor.systemBlue.withAlphaComponent(0.9)
+        updateEnvironmentColor()
         setTitle("📊", for: .normal)
-        titleLabel?.font = UIFont.systemFont(ofSize: 28)
-        layer.cornerRadius = 30
+        titleLabel?.font = UIFont.systemFont(ofSize: 20)
+        layer.cornerRadius = 20
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 2)
         layer.shadowRadius = 4
         layer.shadowOpacity = 0.3
         
-        // 设置大小
-        frame.size = CGSize(width: 60, height: 60)
+        // 设置大小为 40x40
+        frame.size = CGSize(width: 40, height: 40)
+        
+        // 监听通知，确保始终在最顶层
+        NotificationCenter.default.addObserver(self, selector: #selector(bringToFront), name: UIWindow.didBecomeVisibleNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(bringToFront), name: UIWindow.didBecomeKeyNotification, object: nil)
+        
+        // 启动定时器，定期检查并置顶
+        startBringToFrontTimer()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        bringToFrontTimer?.invalidate()
+    }
+    
+    private func startBringToFrontTimer() {
+        // 每0.5秒检查一次，确保始终在最顶层
+        bringToFrontTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.bringToFront()
+        }
+    }
+    
+    @objc private func bringToFront() {
+        guard let superview = superview else { return }
+        superview.bringSubviewToFront(self)
     }
     
     private func setupGestures() {
@@ -169,6 +194,12 @@ class FloatingButton: UIButton {
         }) { _ in
             self.removeFromSuperview()
         }
+    }
+    
+    // 更新环境颜色
+    func updateEnvironmentColor() {
+        let color = EnvironmentManager.shared.currentEnvironment.buttonColor
+        backgroundColor = color.withAlphaComponent(0.9)
     }
 }
 

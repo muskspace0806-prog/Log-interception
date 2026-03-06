@@ -93,6 +93,18 @@ class NetworkLogDetailViewController: UIViewController {
         copyButton.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(copyButton)
         
+        // 分享按钮（浮动在复制按钮旁边）
+        let shareButton = UIButton(type: .system)
+        shareButton.setTitle("分享", for: .normal)
+        shareButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        shareButton.backgroundColor = .systemGreen
+        shareButton.setTitleColor(.white, for: .normal)
+        shareButton.layer.cornerRadius = 6
+        shareButton.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
+        shareButton.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
+        shareButton.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(shareButton)
+        
         // 布局
         NSLayoutConstraint.activate([
             toolBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -128,8 +140,11 @@ class NetworkLogDetailViewController: UIViewController {
             textView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
             textView.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -24),
             
+            shareButton.topAnchor.constraint(equalTo: textView.topAnchor, constant: 8),
+            shareButton.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -8),
+            
             copyButton.topAnchor.constraint(equalTo: textView.topAnchor, constant: 8),
-            copyButton.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -8)
+            copyButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor, constant: -8)
         ])
     }
     
@@ -238,6 +253,51 @@ class NetworkLogDetailViewController: UIViewController {
         }
     }
     
+    @objc private func shareTapped() {
+        // 分享当前 tab 的内容
+        shareCurrentTabContent()
+    }
+    
+    @objc private func shareButtonTapped() {
+        // 分享当前 tab 的内容
+        shareCurrentTabContent()
+    }
+    
+    private func shareCurrentTabContent() {
+        // 获取当前显示的内容
+        let currentContent = textView.text ?? ""
+        let tabName = tabTitles[selectedTabIndex]
+        
+        // 创建临时文件
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
+        let timeString = dateFormatter.string(from: request.startTime)
+        let fileName = "network_\(tabName)_\(timeString).txt"
+        
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(fileName)
+        
+        do {
+            try currentContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            
+            // 调用系统分享
+            let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            
+            // iPad 需要设置 popover
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = view
+                popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            present(activityVC, animated: true)
+        } catch {
+            let alert = UIAlertController(title: "分享失败", message: error.localizedDescription, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "确定", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
     private func displayBasicInfo() {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
@@ -266,18 +326,7 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func displayURLInfo() {
-        var info = "完整URL:\n\(request.url)\n\n"
-        
-        if !request.queryParameters.isEmpty {
-            info += "URL参数 (\(request.queryParameters.count)):\n"
-            for (key, value) in request.queryParameters.sorted(by: { $0.key < $1.key }) {
-                info += "\(key): \(value)\n"
-            }
-        } else {
-            info += "无URL参数"
-        }
-        
-        textView.text = info
+        textView.text = "完整URL:\n\(request.url)"
     }
     
     private func displayRequestHeaders() {
@@ -295,13 +344,35 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func displayRequestBody() {
-        if let bodyString = request.requestBodyString {
-            textView.text = bodyString
-        } else if request.body != nil {
-            textView.text = "无法解析请求Body（可能是二进制数据）"
-        } else {
-            textView.text = "无请求Body"
+        var info = ""
+        
+        // 先显示URL参数
+        if !request.queryParameters.isEmpty {
+            info += "URL参数 (\(request.queryParameters.count)):\n"
+            for (key, value) in request.queryParameters.sorted(by: { $0.key < $1.key }) {
+                info += "\(key): \(value)\n"
+            }
+            info += "\n"
         }
+        
+        // 再显示请求Body
+        if let bodyString = request.requestBodyString {
+            if !info.isEmpty {
+                info += "请求Body:\n"
+            }
+            info += bodyString
+        } else if request.body != nil {
+            if !info.isEmpty {
+                info += "请求Body:\n"
+            }
+            info += "无法解析请求Body（可能是二进制数据）"
+        } else {
+            if info.isEmpty {
+                info = "无URL参数和请求Body"
+            }
+        }
+        
+        textView.text = info
     }
     
     private func displayResponseHeaders() {

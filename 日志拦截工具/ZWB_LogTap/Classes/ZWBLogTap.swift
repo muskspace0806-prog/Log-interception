@@ -18,6 +18,9 @@ public class ZWBLogTap {
     /// 悬浮按钮
     private var floatingButton: FloatingButton?
     
+    /// 当前显示的日志页面
+    private weak var currentLogViewController: NetworkLogViewController?
+    
     /// 配置选项
     public struct Configuration {
         /// 是否显示悬浮按钮
@@ -37,6 +40,9 @@ public class ZWBLogTap {
         
         /// 悬浮按钮初始位置
         public var floatingButtonPosition: FloatingButtonPosition = .bottomRight
+        
+        /// 默认环境（测试/正式）
+        public var defaultEnvironment: EnvironmentManager.Environment = .test
         
         public init() {}
     }
@@ -62,6 +68,9 @@ public class ZWBLogTap {
         }
         
         isEnabled = true
+        
+        // 设置默认环境
+        EnvironmentManager.shared.setEnvironment(configuration.defaultEnvironment)
         
         // 启动 HTTP 拦截
         if configuration.interceptHTTP {
@@ -98,6 +107,22 @@ public class ZWBLogTap {
     
     /// 显示日志页面
     public func showLogViewController() {
+        // 如果已经有显示的页面，关闭所有页面
+        if let currentVC = currentLogViewController {
+            // 找到 NetworkLogViewController 的 presentingViewController
+            // 从它那里 dismiss，会关闭所有 presented 的页面
+            if let presenting = currentVC.presentingViewController {
+                presenting.dismiss(animated: true) {
+                    self.currentLogViewController = nil
+                }
+            } else {
+                currentVC.dismiss(animated: true) {
+                    self.currentLogViewController = nil
+                }
+            }
+            return
+        }
+        
         guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }),
               let rootVC = window.rootViewController else {
             print("⚠️ 无法获取根视图控制器")
@@ -113,6 +138,7 @@ public class ZWBLogTap {
             topVC = presented
         }
         
+        currentLogViewController = logVC
         topVC.present(logVC, animated: true)
     }
     
@@ -178,6 +204,34 @@ public class ZWBLogTap {
         return NetworkInterceptorManager.shared.exportToJSON()
     }
     
+    // MARK: - Environment Management
+    
+    /// 设置环境切换回调
+    /// - Parameter callback: 环境切换时的回调闭包，参数为新环境
+    public func setEnvironmentSwitchCallback(_ callback: @escaping (EnvironmentManager.Environment) -> Void) {
+        EnvironmentManager.shared.onEnvironmentSwitch = callback
+    }
+    
+    /// 获取当前环境
+    public var currentEnvironment: EnvironmentManager.Environment {
+        return EnvironmentManager.shared.currentEnvironment
+    }
+    
+    /// 切换环境
+    public func switchEnvironment() {
+        EnvironmentManager.shared.switchEnvironment()
+        // 更新悬浮按钮颜色
+        floatingButton?.updateEnvironmentColor()
+    }
+    
+    /// 切换到指定环境
+    /// - Parameter environment: 目标环境
+    public func switchTo(environment: EnvironmentManager.Environment) {
+        EnvironmentManager.shared.switchTo(environment)
+        // 更新悬浮按钮颜色
+        floatingButton?.updateEnvironmentColor()
+    }
+    
     // MARK: - Private Methods
     
     private func showFloatingButton(at position: FloatingButtonPosition) {
@@ -199,6 +253,11 @@ public class ZWBLogTap {
         floatingButton?.hide()
         floatingButton = nil
     }
+    
+    /// 清除当前显示的 ViewController 引用
+    internal func clearCurrentViewController() {
+        currentLogViewController = nil
+    }
 }
 
 // MARK: - Convenience Methods
@@ -217,13 +276,15 @@ public extension ZWBLogTap {
         showFloatingButton: Bool = true,
         interceptHTTP: Bool = true,
         interceptWebSocket: Bool = false,  // 默认关闭 WebSocket
-        maxRecords: Int = 1000
+        maxRecords: Int = 1000,
+        defaultEnvironment: EnvironmentManager.Environment = .test
     ) {
         var config = Configuration()
         config.showFloatingButton = showFloatingButton
         config.interceptHTTP = interceptHTTP
         config.interceptWebSocket = interceptWebSocket
         config.maxRecords = maxRecords
+        config.defaultEnvironment = defaultEnvironment
         
         ZWBLogTap.shared.start(with: config)
     }

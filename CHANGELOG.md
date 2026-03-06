@@ -5,6 +5,34 @@ All notable changes to ZWB_LogTap will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-03-06
+
+### Added
+- 🌍 环境切换功能 - 支持测试/正式环境快速切换
+  - 悬浮按钮颜色区分（蓝色=测试，红色=正式）
+  - 在"调试工具"页面新增"环境切换"入口
+  - 提供闭包回调，用户可自定义切换后的逻辑
+  - 支持 `.test`、`.production`、`.custom(String)` 三种环境类型
+- 🛠️ 调试工具集成
+  - 模拟弱网功能（断网、限速、延迟）
+  - Crash 日志监控和查看
+  - 内存监控（实时显示内存使用情况）
+  - 悬浮窗实时显示监控数据
+- 📤 分享功能 - 所有详情页面支持导出为 txt 文件分享
+
+### Changed
+- 🎨 优化入口按钮 - 尺寸调整为 40x40，更加精致
+- 🎨 优化悬浮窗 - 使用独立 UIWindow 确保始终在最顶层
+- 📝 "辅助"改名为"工具" - 更符合功能定位
+
+### Fixed
+- 🐛 修复悬浮窗在 iOS 13+ 无法显示的问题
+- 🐛 修复详情页面分享按钮丢失的问题
+
+### Improved
+- 🚀 提升用户体验，功能更加完善和易用
+- 🔧 环境管理更加灵活，支持多种使用场景
+
 ## [1.0.5] - 2026-03-06
 
 ### Changed

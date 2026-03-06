@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.0.5-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.0.6-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.0.5-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.0.6-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -15,6 +15,10 @@
 - ✅ **HTTP/HTTPS 拦截** - 拦截所有 URLSession 网络请求（稳定）
 - ✅ **Alamofire 支持** - 自动拦截 Alamofire 请求（稳定）
 - ❌ **WebSocket 拦截** - 由于技术限制已禁用，建议使用专业工具
+- ✅ **环境切换** - 支持测试/正式环境快速切换，按钮颜色区分
+- ✅ **模拟弱网** - 支持断网、限速、延迟等网络模拟
+- ✅ **Crash 监控** - 自动捕获并记录应用崩溃日志
+- ✅ **内存监控** - 实时监控内存使用情况
 - ✅ **失败请求高亮** - 错误请求 URL 自动标红，一目了然
 - ✅ **实时查看** - 实时显示请求和响应数据
 - ✅ **JSON 格式化** - 自动格式化 JSON 数据，易于阅读
@@ -26,11 +30,18 @@
 
 ## 📱 预览
 
+### 主界面和调试工具
+
+<p align="center">
+  <img src="Screenshots/首页测试入口.png" width="250" alt="首页">
+  <img src="Screenshots/调试工具列表.png" width="250" alt="调试工具">
+  <img src="Screenshots/http列表页.png" width="250" alt="HTTP列表">
+</p>
+
 ### HTTP 网络日志
 
 <p align="center">
-  <img src="Screenshots/http_list.png" width="300" alt="HTTP 列表">
-  <img src="Screenshots/http_detail.png" width="300" alt="HTTP 详情">
+  <img src="Screenshots/http详情页.png" width="300" alt="HTTP详情">
 </p>
 
 **特性：**
@@ -40,12 +51,13 @@
 - ✅ 支持 GET、POST、PUT、DELETE 等方法
 - ✅ JSON 自动格式化
 - ✅ 完整的请求/响应详情查看
+- ✅ 支持复制和分享功能
 
 ### WebSocket 消息
 
 <p align="center">
-  <img src="Screenshots/im_list.png" width="300" alt="IM 列表">
-  <img src="Screenshots/im_detail.png" width="300" alt="IM 详情">
+  <img src="Screenshots/IM列表.png" width="300" alt="IM列表">
+  <img src="Screenshots/IM详情页.png" width="300" alt="IM详情">
 </p>
 
 **特性：**
@@ -54,12 +66,29 @@
 - ✅ JSON 自动格式化
 - ✅ 消息大小实时显示
 - ✅ 完整的消息内容查看
+- ✅ 支持复制和分享功能
+
+### 调试工具
+
+<p align="center">
+  <img src="Screenshots/模拟弱网.png" width="250" alt="模拟弱网">
+  <img src="Screenshots/内存检测.png" width="250" alt="内存监控">
+  <img src="Screenshots/crash日志.png" width="250" alt="Crash日志">
+</p>
+
+**特性：**
+- ✅ 模拟弱网：断网、限速、延迟
+- ✅ 内存监控：实时显示内存使用
+- ✅ Crash 日志：自动捕获崩溃
+- ✅ 环境切换：测试/正式环境快速切换
+- ✅ 悬浮窗：实时显示监控数据
 
 ### 界面特性
-- ✅ 悬浮按钮，可拖拽移动
+- ✅ 悬浮按钮，可拖拽移动，颜色区分环境
 - ✅ HTTP/IM 模式快速切换
 - ✅ 搜索和过滤功能
 - ✅ 一键清空和导出日志
+- ✅ 完整的调试工具集成
 
 ## 📦 安装
 
@@ -69,7 +98,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.0.5', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.0.6', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -82,7 +111,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.5")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.6")
 ]
 ```
 
@@ -125,6 +154,7 @@ var config = ZWBLogTap.Configuration()
 config.showFloatingButton = true          // 显示悬浮按钮
 config.interceptHTTP = true               // 拦截 HTTP 请求
 config.maxRecords = 1000                  // 最大记录数
+config.defaultEnvironment = .test         // 默认环境（测试/正式）
 
 ZWBLogTap.shared.start(with: config)
 
@@ -132,9 +162,61 @@ ZWBLogTap.shared.start(with: config)
 ZWBLogTap.start(
     showFloatingButton: true,
     interceptHTTP: true,
-    maxRecords: 500
+    maxRecords: 500,
+    defaultEnvironment: .test
 )
 ```
+
+### 🌍 环境切换功能
+
+支持在测试环境和正式环境之间快速切换，悬浮按钮颜色自动区分：
+- 🔵 **蓝色按钮** = 测试环境
+- 🔴 **红色按钮** = 正式环境
+
+**设置环境切换回调：**
+
+```swift
+import ZWB_LogTap
+
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    
+    // 启动调试工具
+    ZWBLogTap.start(defaultEnvironment: .test)
+    
+    // 设置环境切换回调
+    ZWBLogTap.shared.setEnvironmentSwitchCallback { newEnvironment in
+        switch newEnvironment {
+        case .test:
+            // 切换到测试环境
+            APIManager.shared.baseURL = "https://test-api.example.com"
+            print("🔵 已切换到测试环境")
+            
+        case .production:
+            // 切换到正式环境
+            APIManager.shared.baseURL = "https://api.example.com"
+            print("🔴 已切换到正式环境")
+            
+        case .custom(let name):
+            print("🟠 自定义环境: \(name)")
+        }
+        
+        // 重新初始化网络层、清空缓存等
+        NetworkManager.shared.reinitialize()
+    }
+    
+    return true
+}
+```
+
+**用户操作流程：**
+1. 点击悬浮按钮（颜色表示当前环境）
+2. 进入"调试工具"页面
+3. 点击"环境切换"选项
+4. 确认切换
+5. 悬浮按钮颜色自动更新
+6. 回调函数被触发
+
+**详细文档：** 📖 [环境切换完整指南](ENVIRONMENT_SWITCHING_GUIDE.md)
 
 ### ❌ WebSocket 拦截说明
 

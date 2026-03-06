@@ -48,6 +48,14 @@ class WebSocketMessageDetailViewController: UIViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         toolBar.addSubview(titleLabel)
         
+        // 分享按钮
+        let shareButton = UIButton(type: .system)
+        shareButton.setTitle("分享", for: .normal)
+        shareButton.titleLabel?.font = .systemFont(ofSize: 16)
+        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
+        shareButton.translatesAutoresizingMaskIntoConstraints = false
+        toolBar.addSubview(shareButton)
+        
         // 滚动视图
         scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -71,6 +79,9 @@ class WebSocketMessageDetailViewController: UIViewController {
             
             titleLabel.centerXAnchor.constraint(equalTo: toolBar.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
+            
+            shareButton.trailingAnchor.constraint(equalTo: toolBar.trailingAnchor, constant: -16),
+            shareButton.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
             
             scrollView.topAnchor.constraint(equalTo: toolBar.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -216,6 +227,63 @@ class WebSocketMessageDetailViewController: UIViewController {
     
     @objc private func closeTapped() {
         dismiss(animated: true)
+    }
+    
+    @objc private func shareTapped() {
+        guard let message = message else { return }
+        
+        // 生成完整的消息文本
+        let fullText = generateFullMessageText(message)
+        
+        // 创建临时文件
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
+        let timeString = dateFormatter.string(from: message.timestamp)
+        let fileName = "websocket_\(message.type.rawValue)_\(timeString).txt"
+        
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(fileName)
+        
+        do {
+            try fullText.write(to: fileURL, atomically: true, encoding: .utf8)
+            
+            // 调用系统分享
+            let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            
+            // iPad 需要设置 popover
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = view
+                popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            present(activityVC, animated: true)
+        } catch {
+            let alert = UIAlertController(title: "分享失败", message: error.localizedDescription, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "确定", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
+    private func generateFullMessageText(_ message: WebSocketMessage) -> String {
+        var text = """
+        ===== WebSocket 消息详情 =====
+        
+        【基本信息】
+        类型: \(message.type.emoji) \(message.type.rawValue)
+        时间: \(message.timeString)
+        URL: \(message.url)
+        主机: \(message.host)
+        路径: \(message.path)
+        数据大小: \(message.dataSize)
+        
+        【消息内容】
+        \(message.dataString)
+        
+        =====================
+        """
+        
+        return text
     }
     
     @objc private func copyMessageContent() {

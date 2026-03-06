@@ -14,6 +14,7 @@ class NetworkLogViewController: UIViewController {
     private var typeSegment: UISegmentedControl!  // HTTP/IM 切换
     private var filterSegment: UISegmentedControl!
     private var closeButton: UIButton!
+    private var toolsButton: UIButton!
     private var clearButton: UIButton!
     private var exportButton: UIButton!
     
@@ -61,6 +62,14 @@ class NetworkLogViewController: UIViewController {
         titleLabel.textAlignment = .center
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         toolBar.addSubview(titleLabel)
+        
+        // 工具按钮
+        toolsButton = UIButton(type: .system)
+        toolsButton.setTitle("工具", for: .normal)
+        toolsButton.titleLabel?.font = .systemFont(ofSize: 16)
+        toolsButton.addTarget(self, action: #selector(toolsTapped), for: .touchUpInside)
+        toolsButton.translatesAutoresizingMaskIntoConstraints = false
+        toolBar.addSubview(toolsButton)
         
         // 清空按钮
         clearButton = UIButton(type: .system)
@@ -129,6 +138,9 @@ class NetworkLogViewController: UIViewController {
             
             clearButton.trailingAnchor.constraint(equalTo: exportButton.leadingAnchor, constant: -12),
             clearButton.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
+            
+            toolsButton.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -12),
+            toolsButton.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
             
             searchBar.topAnchor.constraint(equalTo: toolBar.bottomAnchor),
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -239,7 +251,15 @@ class NetworkLogViewController: UIViewController {
     }
     
     @objc private func closeTapped() {
-        dismiss(animated: true)
+        dismiss(animated: true) {
+            // 清除 ZWBLogTap 中的引用
+            ZWBLogTap.shared.clearCurrentViewController()
+        }
+    }
+    
+    @objc private func toolsTapped() {
+        let toolsVC = DebugToolsViewController()
+        present(toolsVC, animated: true)
     }
     
     @objc private func clearTapped() {
