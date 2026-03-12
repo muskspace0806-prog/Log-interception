@@ -16,6 +16,7 @@
 - ✅ **Alamofire 支持** - 自动拦截 Alamofire 请求（稳定）
 - ❌ **WebSocket 拦截** - 由于技术限制已禁用，建议使用专业工具
 - ✅ **环境切换** - 支持测试/正式环境快速切换，按钮颜色区分
+- ✅ **响应数据解密** - 正式环境自动解密加密响应（AES-256-CBC）
 - ✅ **模拟弱网** - 支持断网、限速、延迟等网络模拟
 - ✅ **Crash 监控** - 自动捕获并记录应用崩溃日志
 - ✅ **内存监控** - 实时监控内存使用情况
@@ -167,11 +168,49 @@ ZWBLogTap.start(
 )
 ```
 
-### 🌍 环境切换功能
+### 🌍 环境切换与响应解密
 
 支持在测试环境和正式环境之间快速切换，悬浮按钮颜色自动区分：
-- 🔵 **蓝色按钮** = 测试环境
-- 🔴 **红色按钮** = 正式环境
+- 🔵 **蓝色按钮** = 测试环境（不解密）
+- 🔴 **红色按钮** = 正式环境（自动解密）
+
+**基础配置（不需要解密）：**
+
+```swift
+import ZWB_LogTap
+
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    
+    // 启动调试工具，默认测试环境
+    ZWBLogTap.start(defaultEnvironment: .test)
+    
+    return true
+}
+```
+
+**配置响应数据解密（正式环境）：**
+
+```swift
+import ZWB_LogTap
+
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    
+    // 创建解密配置
+    let decryptionConfig = ZWBLogTap.ResponseDecryptionConfig(
+        aesKey: "your_aes_key_here",      // 你的 AES 解密 Key
+        aesIV: "your_aes_iv_here",        // 你的 AES 解密 IV
+        encryptedFieldName: "ed"          // 加密数据的字段名（默认 "ed"）
+    )
+    
+    // 启动时配置
+    ZWBLogTap.start(
+        defaultEnvironment: .production,   // 默认正式环境
+        responseDecryption: decryptionConfig
+    )
+    
+    return true
+}
+```
 
 **设置环境切换回调：**
 
@@ -208,15 +247,38 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 }
 ```
 
-**用户操作流程：**
-1. 点击悬浮按钮（颜色表示当前环境）
-2. 进入"调试工具"页面
-3. 点击"环境切换"选项
-4. 确认切换
-5. 悬浮按钮颜色自动更新
-6. 回调函数被触发
+**响应数据解密工作原理：**
 
-**详细文档：** 📖 [环境切换完整指南](ENVIRONMENT_SWITCHING_GUIDE.md)
+1. **仅在正式环境启用** - 测试环境不进行解密
+2. **自动识别加密格式** - 检查响应是否为 `{"ed": "加密字符串"}` 格式
+3. **Base64 解码** - 将加密字符串进行 Base64 解码
+4. **AES-256-CBC 解密** - 使用配置的 Key 和 IV 进行解密
+5. **显示结果** - 在日志面板中显示解密后的 JSON
+
+**加密响应示例：**
+
+```json
+{
+  "ed": "mdlIOnMCcscqcn4biCloPy1d7cl+LHM5Jq299gHUwaC..."
+}
+```
+
+解密后显示为：
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "userId": "12345",
+    "userName": "张三"
+  }
+}
+```
+
+**详细文档：** 
+- 📖 [环境切换完整指南](ENVIRONMENT_SWITCHING_GUIDE.md)
+- 📖 [响应解密功能说明](ENVIRONMENT_FEATURE_SUMMARY.md)
 
 ### ❌ WebSocket 拦截说明
 
@@ -431,6 +493,28 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.0.6] - 2026-03-12
+
+#### Added
+- ✅ 响应数据解密功能 - 支持在正式环境中自动解密加密的响应数据
+  - 支持 AES-256-CBC 解密算法
+  - 自动识别加密格式 `{"ed": "加密字符串"}`
+  - 仅在正式环境启用，测试环境不解密
+  - 解密失败时显示原始数据
+- ✅ 新增 `ResponseDecryptionConfig` 配置类
+  - 配置 AES Key、IV 和加密字段名
+  - 灵活的初始化方式
+- ✅ 新增 `AESCrypto.swift` - 标准的 CommonCrypto AES 实现
+  - 支持 AES-256-CBC 加密/解密
+  - 兼容 Objective-C 风格 API
+
+#### Changed
+- 🎨 优化环境管理器 - 添加解密配置管理
+- 📝 更新文档 - 添加响应解密功能说明
+
+#### Improved
+- 🚀 提升正式环境调试体验，可直接查看解密后的响应数据
 
 ### [1.0.5] - 2026-03-06
 

@@ -57,28 +57,56 @@ public struct InterceptedRequest: Identifiable {
     public var requestBodyString: String? {
         guard let body = body else { return nil }
         
+        // 先尝试解密（如果配置了解密）
+        let decryptedData = EnvironmentManager.shared.decryptResponseData(body)
+        
         // 尝试解析为 JSON
-        if let json = try? JSONSerialization.jsonObject(with: body),
+        if let json = try? JSONSerialization.jsonObject(with: decryptedData),
            let data = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
            let string = String(data: data, encoding: .utf8) {
             return string
         }
         
-        // 否则返回原始字符串
-        return String(data: body, encoding: .utf8)
+        // 尝试返回原始字符串
+        if let string = String(data: decryptedData, encoding: .utf8) {
+            return string
+        }
+        
+        // 如果解密后的数据无法转换为 UTF-8，尝试使用原始数据
+        if decryptedData != body, let string = String(data: body, encoding: .utf8) {
+            return string
+        }
+        
+        return "⚠️ 无法解析为文本（可能是二进制数据）"
     }
     
     // 响应 Body 字符串
     public var responseBodyString: String? {
         guard let data = responseData else { return nil }
         
+        // 先尝试解密（如果配置了解密）
+        let decryptedData = EnvironmentManager.shared.decryptResponseData(data)
+        
         // 尝试解析为 JSON
-        if let jsonString = responseJSONString {
-            return jsonString
+        if let json = try? JSONSerialization.jsonObject(with: decryptedData),
+           let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+           let string = String(data: jsonData, encoding: .utf8) {
+            return string
         }
         
-        // 否则返回原始字符串
-        return String(data: data, encoding: .utf8)
+        // 尝试返回原始字符串
+        if let string = String(data: decryptedData, encoding: .utf8) {
+            return string
+        }
+        
+        // 如果解密后的数据无法转换为 UTF-8，尝试使用原始数据
+        if decryptedData != data, let string = String(data: data, encoding: .utf8) {
+            print("⚠️ [InterceptedRequest] 解密后的数据无法转换为 UTF-8，使用原始数据")
+            return string
+        }
+        
+        // 最后尝试：返回十六进制表示
+        return "⚠️ 无法解析为文本（可能是二进制数据）\n数据大小: \(decryptedData.count) 字节"
     }
     
     // 状态码颜色
@@ -112,5 +140,44 @@ public struct InterceptedRequest: Identifiable {
             params[item.name] = item.value ?? ""
         }
         return params
+    }
+    
+    // URL 参数（解密后）
+    public var decryptedQueryParameters: [String: String] {
+        let params = queryParameters
+        
+        // 如果只有一个参数且是 "ed"，说明整个参数都是加密的
+        if params.count == 1, let edValue = params["ed"] {
+            // 尝试解密整个参数
+            if let jsonString = "{\"ed\":\"\(edValue)\"}".data(using: .utf8) {
+                let decryptedData = EnvironmentManager.shared.decryptResponseData(jsonString)
+                
+                // 尝试解析解密后的 JSON
+                if let json = try? JSONSerialization.jsonObject(with: decryptedData) as? [String: Any] {
+                    var decryptedParams: [String: String] = [:]
+                    for (key, value) in json {
+                        decryptedParams[key] = "\(value)"
+                    }
+                    return decryptedParams
+                }
+            }
+        }
+        
+        // 否则尝试解密每个参数值
+        var decryptedParams: [String: String] = [:]
+        for (key, value) in params {
+            if let valueData = value.data(using: .utf8) {
+                let decryptedData = EnvironmentManager.shared.decryptResponseData(valueData)
+                if let decryptedString = String(data: decryptedData, encoding: .utf8) {
+                    decryptedParams[key] = decryptedString
+                } else {
+                    decryptedParams[key] = value
+                }
+            } else {
+                decryptedParams[key] = value
+            }
+        }
+        
+        return decryptedParams
     }
 }

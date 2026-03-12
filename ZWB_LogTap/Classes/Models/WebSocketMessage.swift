@@ -71,14 +71,35 @@ public struct WebSocketMessage: Identifiable {
         return formatter.string(from: timestamp)
     }
     
-    // 格式化的数据字符串（尝试 JSON 美化）
+    // 格式化的数据字符串（尝试 JSON 美化和解密）
     public var formattedDataString: String {
-        // 尝试格式化 JSON
-        if let jsonData = dataString.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: jsonData),
-           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
-           let prettyString = String(data: prettyData, encoding: .utf8) {
-            return prettyString
+        // 先尝试解密
+        if let jsonData = dataString.data(using: .utf8) {
+            let decryptedData = EnvironmentManager.shared.decryptResponseData(jsonData)
+            
+            // 尝试格式化 JSON
+            if let json = try? JSONSerialization.jsonObject(with: decryptedData),
+               let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+               let prettyString = String(data: prettyData, encoding: .utf8) {
+                return prettyString
+            }
+            
+            // 如果不是 JSON，尝试返回解密后的字符串
+            if let decryptedString = String(data: decryptedData, encoding: .utf8) {
+                return decryptedString
+            }
+        }
+        
+        return dataString
+    }
+    
+    // 解密后的数据字符串
+    public var decryptedDataString: String {
+        if let jsonData = dataString.data(using: .utf8) {
+            let decryptedData = EnvironmentManager.shared.decryptResponseData(jsonData)
+            if let decryptedString = String(data: decryptedData, encoding: .utf8) {
+                return decryptedString
+            }
         }
         return dataString
     }

@@ -2,6 +2,31 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.0.7] - 2024-01-XX
+
+### Added
+- 响应数据解密功能（支持 AES-128-CBC）
+- 多环境解密配置（测试/正式环境可配置不同的 Key 和 IV）
+- HTTP 响应 Body 自动解密
+- WebSocket (IM) 消息自动解密
+- URL 过滤功能（支持模糊匹配）
+- URL 过滤规则管理（添加/删除/持久化）
+- 新增 `AESCrypto.swift` - AES 加解密实现
+- 新增 `URLFilterManager.swift` - URL 过滤管理器
+- 新增 `URLFilterViewController.swift` - URL 过滤设置页面
+
+### Changed
+- URL 参数从"URL 信息"标签迁移到"请求 Body"标签显示
+- HTTP 详情页默认显示"响应 Body"标签
+- 优化按钮布局，"过滤"按钮移至左侧
+- 调整浮动按钮底部距离，避免与 tabBar 重叠
+- `EnvironmentManager` 支持多环境解密配置
+- `InterceptedRequest` 和 `WebSocketMessage` 支持解密
+
+### Fixed
+- 修复浮动按钮可能与 tabBar 重叠的问题
+- 优化按钮布局，避免拥挤
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

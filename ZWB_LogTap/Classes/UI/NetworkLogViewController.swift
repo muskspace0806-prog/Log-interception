@@ -15,6 +15,7 @@ class NetworkLogViewController: UIViewController {
     private var filterSegment: UISegmentedControl!
     private var closeButton: UIButton!
     private var toolsButton: UIButton!
+    private var filterButton: UIButton!  // URL 过滤按钮
     private var clearButton: UIButton!
     private var exportButton: UIButton!
     
@@ -70,6 +71,14 @@ class NetworkLogViewController: UIViewController {
         toolsButton.addTarget(self, action: #selector(toolsTapped), for: .touchUpInside)
         toolsButton.translatesAutoresizingMaskIntoConstraints = false
         toolBar.addSubview(toolsButton)
+        
+        // 过滤按钮
+        filterButton = UIButton(type: .system)
+        filterButton.setTitle("过滤", for: .normal)
+        filterButton.titleLabel?.font = .systemFont(ofSize: 16)
+        filterButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)
+        filterButton.translatesAutoresizingMaskIntoConstraints = false
+        toolBar.addSubview(filterButton)
         
         // 清空按钮
         clearButton = UIButton(type: .system)
@@ -129,6 +138,9 @@ class NetworkLogViewController: UIViewController {
             
             closeButton.leadingAnchor.constraint(equalTo: toolBar.leadingAnchor, constant: 16),
             closeButton.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
+            
+            filterButton.leadingAnchor.constraint(equalTo: closeButton.trailingAnchor, constant: 12),
+            filterButton.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
             
             titleLabel.centerXAnchor.constraint(equalTo: toolBar.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: toolBar.centerYAnchor),
@@ -204,6 +216,9 @@ class NetworkLogViewController: UIViewController {
     private func applyHTTPFilters() {
         filteredRequests = requests
         
+        // 应用 URL 过滤（优先级最高）
+        filteredRequests = filteredRequests.filter { !URLFilterManager.shared.shouldFilter(url: $0.url) }
+        
         // 应用搜索
         if !searchKeyword.isEmpty {
             filteredRequests = filteredRequests.filter { $0.url.lowercased().contains(searchKeyword.lowercased()) }
@@ -226,6 +241,9 @@ class NetworkLogViewController: UIViewController {
     
     private func applyWSFilters() {
         filteredWSMessages = wsMessages
+        
+        // 应用 URL 过滤（优先级最高）
+        filteredWSMessages = filteredWSMessages.filter { !URLFilterManager.shared.shouldFilter(url: $0.url) }
         
         // 应用搜索
         if !searchKeyword.isEmpty {
@@ -260,6 +278,11 @@ class NetworkLogViewController: UIViewController {
     @objc private func toolsTapped() {
         let toolsVC = DebugToolsViewController()
         present(toolsVC, animated: true)
+    }
+    
+    @objc private func filterTapped() {
+        let filterVC = URLFilterViewController()
+        present(filterVC, animated: true)
     }
     
     @objc private func clearTapped() {

@@ -12,7 +12,7 @@ public class EnvironmentManager {
     public static let shared = EnvironmentManager()
     
     /// 环境类型
-    public enum Environment: Equatable {
+    public enum Environment: Hashable {
         case test           // 测试环境
         case production     // 正式环境
         case custom(String) // 自定义环境
@@ -68,6 +68,9 @@ public class EnvironmentManager {
     /// 环境切换回调
     public var onEnvironmentSwitch: ((Environment) -> Void)?
     
+    /// 响应数据解密配置（按环境存储）
+    private var decryptionConfigs: [Environment: ZWBLogTap.ResponseDecryptionConfig] = [:]
+    
     private init() {}
     
     /// 设置当前环境
@@ -95,5 +98,103 @@ public class EnvironmentManager {
         
         // 触发回调
         onEnvironmentSwitch?(environment)
+    }
+    
+    /// 设置解密配置（支持多环境）
+    public func setDecryptionConfigs(_ configs: [Environment: ZWBLogTap.ResponseDecryptionConfig]) {
+        decryptionConfigs = configs
+        for (env, _) in configs {
+            print("🔐 [EnvironmentManager] 已为 \(env.name) 配置响应数据解密")
+        }
+    }
+    
+    /// 为指定环境设置解密配置
+    public func setDecryptionConfig(for environment: Environment, config: ZWBLogTap.ResponseDecryptionConfig?) {
+        if let config = config {
+            decryptionConfigs[environment] = config
+            print("🔐 [EnvironmentManager] 已为 \(environment.name) 配置响应数据解密")
+        } else {
+            decryptionConfigs.removeValue(forKey: environment)
+            print("🔓 [EnvironmentManager] 已移除 \(environment.name) 的解密配置")
+        }
+    }
+    
+    /// 获取当前环境的解密配置
+    public func getCurrentDecryptionConfig() -> ZWBLogTap.ResponseDecryptionConfig? {
+        return decryptionConfigs[currentEnvironment]
+    }
+    
+    /// 解密响应数据
+    /// - Parameter data: 原始响应数据
+    /// - Returns: 解密后的数据，如果不需要解密或解密失败则返回原数据
+    public func decryptResponseData(_ data: Data) -> Data {
+        // 获取当前环境的解密配置
+        guard let config = decryptionConfigs[currentEnvironment], config.enabled else {
+            // 如果当前环境没有配置解密，直接返回原数据
+            return data
+        }
+        
+        // 尝试解析 JSON
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+              let encryptedString = json[config.encryptedFieldName] else {
+            // 如果不是加密格式，返回原数据
+            return data
+        }
+        
+        print("🔐 [EnvironmentManager] 检测到加密数据，字段名: \(config.encryptedFieldName)")
+        
+        // Base64 解码
+        guard let encryptedData = Data(base64Encoded: encryptedString) else {
+            print("⚠️ [EnvironmentManager] Base64 解码失败，返回原数据")
+            return data
+        }
+        
+        print("🔐 [EnvironmentManager] Base64 解码成功，加密数据大小: \(encryptedData.count) 字节")
+        
+        // AES 解密
+        guard let keyData = config.aesKey.data(using: .utf8),
+              let ivData = config.aesIV.data(using: .utf8) else {
+            print("⚠️ [EnvironmentManager] Key/IV 转换失败，返回原数据")
+            return data
+        }
+        
+        print("🔐 [EnvironmentManager] Key 长度: \(keyData.count), IV 长度: \(ivData.count)")
+        
+        guard let decryptedData = aesDecrypt(data: encryptedData, key: keyData, iv: ivData) else {
+            print("⚠️ [EnvironmentManager] AES 解密失败，返回原数据")
+            return data
+        }
+        
+        print("🔐 [EnvironmentManager] AES 解密完成，解密数据大小: \(decryptedData.count) 字节")
+        
+        // 验证解密后的数据是否为有效的 JSON 或 UTF-8
+        // 先尝试解析为 JSON
+        if let _ = try? JSONSerialization.jsonObject(with: decryptedData) {
+            print("✅ [EnvironmentManager] 解密成功，数据为有效的 JSON")
+            return decryptedData
+        }
+        
+        // 再尝试验证是否为有效的 UTF-8
+        if let utf8String = String(data: decryptedData, encoding: .utf8), !utf8String.isEmpty {
+            print("✅ [EnvironmentManager] 解密成功，数据为有效的 UTF-8 文本")
+            return decryptedData
+        }
+        
+        // 如果都不是，说明解密失败（Key/IV 可能错误）
+        print("❌ [EnvironmentManager] 解密后的数据既不是 JSON 也不是有效的 UTF-8")
+        print("❌ [EnvironmentManager] 可能原因：")
+        print("   1. AES Key 不正确")
+        print("   2. AES IV 不正确")
+        print("   3. 加密算法不匹配（当前使用 AES-256-CBC）")
+        print("   4. 数据本身已损坏")
+        print("⚠️ [EnvironmentManager] 返回原始加密数据")
+        
+        return data
+    }
+    
+    /// AES-128-CBC 解密（与你的原有代码一致）
+    private func aesDecrypt(data: Data, key: Data, iv: Data) -> Data? {
+        // 使用 AES-128（与你的 jx_AES256Decrypt 方法一致）
+        return data.aes128Decrypt(key: key, iv: iv)
     }
 }

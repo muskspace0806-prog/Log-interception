@@ -44,7 +44,32 @@ public class ZWBLogTap {
         /// 默认环境（测试/正式）
         public var defaultEnvironment: EnvironmentManager.Environment = .test
         
+        /// 响应数据解密配置（按环境配置）
+        public var decryptionConfigs: [EnvironmentManager.Environment: ResponseDecryptionConfig] = [:]
+        
         public init() {}
+    }
+    
+    /// 响应数据解密配置
+    public struct ResponseDecryptionConfig {
+        /// AES 解密 Key
+        public let aesKey: String
+        
+        /// AES 解密 IV
+        public let aesIV: String
+        
+        /// 加密数据的 JSON 字段名（默认为 "ed"）
+        public let encryptedFieldName: String
+        
+        /// 是否启用解密（默认启用）
+        public let enabled: Bool
+        
+        public init(aesKey: String, aesIV: String, encryptedFieldName: String = "ed", enabled: Bool = true) {
+            self.aesKey = aesKey
+            self.aesIV = aesIV
+            self.encryptedFieldName = encryptedFieldName
+            self.enabled = enabled
+        }
     }
     
     /// 悬浮按钮位置
@@ -71,6 +96,11 @@ public class ZWBLogTap {
         
         // 设置默认环境
         EnvironmentManager.shared.setEnvironment(configuration.defaultEnvironment)
+        
+        // 设置解密配置（支持多环境）
+        if !configuration.decryptionConfigs.isEmpty {
+            EnvironmentManager.shared.setDecryptionConfigs(configuration.decryptionConfigs)
+        }
         
         // 启动 HTTP 拦截
         if configuration.interceptHTTP {
@@ -277,7 +307,8 @@ public extension ZWBLogTap {
         interceptHTTP: Bool = true,
         interceptWebSocket: Bool = false,  // 默认关闭 WebSocket
         maxRecords: Int = 1000,
-        defaultEnvironment: EnvironmentManager.Environment = .test
+        defaultEnvironment: EnvironmentManager.Environment = .test,
+        decryptionConfigs: [EnvironmentManager.Environment: ResponseDecryptionConfig] = [:]
     ) {
         var config = Configuration()
         config.showFloatingButton = showFloatingButton
@@ -285,6 +316,7 @@ public extension ZWBLogTap {
         config.interceptWebSocket = interceptWebSocket
         config.maxRecords = maxRecords
         config.defaultEnvironment = defaultEnvironment
+        config.decryptionConfigs = decryptionConfigs
         
         ZWBLogTap.shared.start(with: config)
     }

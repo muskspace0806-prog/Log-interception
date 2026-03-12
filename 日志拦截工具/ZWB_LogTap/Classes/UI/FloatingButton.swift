@@ -152,9 +152,10 @@ class FloatingButton: UIButton {
             newCenter.x = screenWidth - frame.width / 2 - margin
         }
         
-        // 限制 Y 轴范围
+        // 限制 Y 轴范围，增加底部额外距离避免与 tabBar 重叠
+        let extraBottomMargin: CGFloat = 60
         let minY = frame.height / 2 + margin + (superview.safeAreaInsets.top)
-        let maxY = screenHeight - frame.height / 2 - margin - (superview.safeAreaInsets.bottom)
+        let maxY = screenHeight - frame.height / 2 - margin - (superview.safeAreaInsets.bottom) - extraBottomMargin
         newCenter.y = max(minY, min(maxY, center.y))
         
         // 动画移动到边缘
@@ -173,8 +174,10 @@ class FloatingButton: UIButton {
         
         // 初始位置（右下角）
         let margin: CGFloat = 20
+        // 增加额外的底部距离，避免与 tabBar 重叠（tabBar 高度约 49-83pt）
+        let extraBottomMargin: CGFloat = 60
         let x = view.bounds.width - frame.width / 2 - margin
-        let y = view.bounds.height - frame.height / 2 - margin - view.safeAreaInsets.bottom
+        let y = view.bounds.height - frame.height / 2 - margin - view.safeAreaInsets.bottom - extraBottomMargin
         center = CGPoint(x: x, y: y)
         
         // 显示动画

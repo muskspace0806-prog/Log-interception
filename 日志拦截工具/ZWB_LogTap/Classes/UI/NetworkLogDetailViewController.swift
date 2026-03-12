@@ -25,7 +25,10 @@ class NetworkLogDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        displayBasicInfo()
+        // 默认显示响应Body（索引5）
+        selectedTabIndex = 5
+        updateTabButtonStyles()
+        displayResponseBody()
     }
     
     private func setupUI() {
@@ -326,7 +329,18 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func displayURLInfo() {
-        textView.text = "完整URL:\n\(request.url)"
+        var info = "完整URL:\n\(request.url)\n\n"
+        
+        // 显示解密后的 URL 参数
+        let params = request.decryptedQueryParameters
+        if !params.isEmpty {
+            info += "URL参数（解密后） (\(params.count)):\n"
+            for (key, value) in params.sorted(by: { $0.key < $1.key }) {
+                info += "\(key): \(value)\n"
+            }
+        }
+        
+        textView.text = info
     }
     
     private func displayRequestHeaders() {
@@ -346,19 +360,20 @@ class NetworkLogDetailViewController: UIViewController {
     private func displayRequestBody() {
         var info = ""
         
-        // 先显示URL参数
-        if !request.queryParameters.isEmpty {
-            info += "URL参数 (\(request.queryParameters.count)):\n"
-            for (key, value) in request.queryParameters.sorted(by: { $0.key < $1.key }) {
+        // 先显示URL参数（使用解密后的）
+        let params = request.decryptedQueryParameters
+        if !params.isEmpty {
+            info += "URL参数（解密后） (\(params.count)):\n"
+            for (key, value) in params.sorted(by: { $0.key < $1.key }) {
                 info += "\(key): \(value)\n"
             }
             info += "\n"
         }
         
-        // 再显示请求Body
+        // 再显示请求Body（已经在 requestBodyString 中解密）
         if let bodyString = request.requestBodyString {
             if !info.isEmpty {
-                info += "请求Body:\n"
+                info += "请求Body（解密后）:\n"
             }
             info += bodyString
         } else if request.body != nil {
