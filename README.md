@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.0.6-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.0.7-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.0.6-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.0.7-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -16,7 +16,8 @@
 - ✅ **Alamofire 支持** - 自动拦截 Alamofire 请求（稳定）
 - ❌ **WebSocket 拦截** - 由于技术限制已禁用，建议使用专业工具
 - ✅ **环境切换** - 支持测试/正式环境快速切换，按钮颜色区分
-- ✅ **响应数据解密** - 正式环境自动解密加密响应（AES-256-CBC）
+- ✅ **响应数据解密** - 支持 AES-128-CBC 解密，多环境配置
+- ✅ **URL 过滤** - 支持过滤指定 URL，不显示在日志列表
 - ✅ **模拟弱网** - 支持断网、限速、延迟等网络模拟
 - ✅ **Crash 监控** - 自动捕获并记录应用崩溃日志
 - ✅ **内存监控** - 实时监控内存使用情况
@@ -99,7 +100,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.0.6', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.0.7', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -112,7 +113,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.6")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.7")
 ]
 ```
 
@@ -171,8 +172,8 @@ ZWBLogTap.start(
 ### 🌍 环境切换与响应解密
 
 支持在测试环境和正式环境之间快速切换，悬浮按钮颜色自动区分：
-- 🔵 **蓝色按钮** = 测试环境（不解密）
-- 🔴 **红色按钮** = 正式环境（自动解密）
+- 🔵 **蓝色按钮** = 测试环境
+- 🔴 **红色按钮** = 正式环境
 
 **基础配置（不需要解密）：**
 
@@ -188,24 +189,36 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 }
 ```
 
-**配置响应数据解密（正式环境）：**
+**配置多环境响应数据解密：**
 
 ```swift
 import ZWB_LogTap
 
 func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     
-    // 创建解密配置
-    let decryptionConfig = ZWBLogTap.ResponseDecryptionConfig(
-        aesKey: "your_aes_key_here",      // 你的 AES 解密 Key
-        aesIV: "your_aes_iv_here",        // 你的 AES 解密 IV
-        encryptedFieldName: "ed"          // 加密数据的字段名（默认 "ed"）
+    // 配置测试环境解密
+    let testConfig = ZWBLogTap.ResponseDecryptionConfig(
+        aesKey: "test_aes_key_16b",      // 测试环境 AES Key（16字节）
+        aesIV: "test_aes_iv__16b",       // 测试环境 AES IV（16字节）
+        encryptedFieldName: "ed",        // 加密数据的字段名
+        enabled: true
     )
     
-    // 启动时配置
+    // 配置正式环境解密
+    let prodConfig = ZWBLogTap.ResponseDecryptionConfig(
+        aesKey: "prod_aes_key_16b",      // 正式环境 AES Key（16字节）
+        aesIV: "prod_aes_iv__16b",       // 正式环境 AES IV（16字节）
+        encryptedFieldName: "ed",
+        enabled: true
+    )
+    
+    // 启动时配置多环境解密
     ZWBLogTap.start(
-        defaultEnvironment: .production,   // 默认正式环境
-        responseDecryption: decryptionConfig
+        defaultEnvironment: .test,
+        decryptionConfigs: [
+            .test: testConfig,
+            .production: prodConfig
+        ]
     )
     
     return true
@@ -279,6 +292,29 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 **详细文档：** 
 - 📖 [环境切换完整指南](ENVIRONMENT_SWITCHING_GUIDE.md)
 - 📖 [响应解密功能说明](ENVIRONMENT_FEATURE_SUMMARY.md)
+- 📖 [解密功能测试指南](DECRYPTION_TEST_GUIDE.md)
+
+### 🔍 URL 过滤功能
+
+支持过滤不需要的 URL 请求，让日志列表更清晰：
+
+**使用方法：**
+
+1. 点击日志面板顶部的"过滤"按钮
+2. 点击"添加"输入要过滤的 URL（支持部分匹配）
+3. 匹配的 URL 请求将不再显示在日志列表中
+4. 点击规则右侧的 ✕ 可删除过滤规则
+
+**特性：**
+- ✅ 支持模糊匹配（不区分大小写）
+- ✅ 支持 HTTP 和 WebSocket 消息过滤
+- ✅ 过滤规则持久化存储
+- ✅ 可随时添加/删除过滤规则
+
+**示例：**
+- 过滤 `analytics` - 将过滤所有包含 "analytics" 的 URL
+- 过滤 `api.example.com/log` - 将过滤所有包含该路径的请求
+- 过滤 `tracking` - 将过滤所有包含 "tracking" 的请求
 
 ### ❌ WebSocket 拦截说明
 
@@ -493,6 +529,41 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.0.7] - 2026-03-12
+
+#### Added
+- ✅ 响应数据解密功能增强
+  - 支持多环境解密配置（测试/正式环境可配置不同的 Key 和 IV）
+  - 支持 AES-128-CBC 解密算法
+  - HTTP 响应 Body 自动解密
+  - WebSocket (IM) 消息自动解密
+  - 解密失败时安全回退到原始数据
+  - 默认不解密，按需配置
+- ✅ URL 过滤功能
+  - 支持添加 URL 过滤规则（模糊匹配）
+  - 过滤的 URL 请求不会显示在日志面板
+  - 支持 HTTP 和 WebSocket 消息过滤
+  - 过滤规则持久化存储
+  - 可随时添加/删除过滤规则
+- ✅ 新增文件
+  - `AESCrypto.swift` - AES 加解密实现
+  - `URLFilterManager.swift` - URL 过滤管理器
+  - `URLFilterViewController.swift` - URL 过滤设置页面
+
+#### Changed
+- 🎨 URL 参数从"URL 信息"标签迁移到"请求 Body"标签显示
+- 🎨 HTTP 详情页默认显示"响应 Body"标签
+- 🎨 优化按钮布局，"过滤"按钮移至左侧
+- 🎨 调整浮动按钮底部距离，避免与 tabBar 重叠
+
+#### Fixed
+- 🐛 修复浮动按钮可能与 tabBar 重叠的问题
+- 🐛 优化按钮布局，避免拥挤
+
+#### Improved
+- 🚀 提升多环境调试体验，支持不同环境使用不同解密配置
+- 🚀 提升用户体验，可过滤不需要的 URL 请求
 
 ### [1.0.6] - 2026-03-12
 
