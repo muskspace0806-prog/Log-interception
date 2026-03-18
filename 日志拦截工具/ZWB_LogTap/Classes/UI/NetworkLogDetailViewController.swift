@@ -77,9 +77,9 @@ class NetworkLogDetailViewController: UIViewController {
         textView = UITextView()
         textView.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
         textView.isEditable = false
+        textView.isScrollEnabled = false  // 关闭自身滚动，由外层 scrollView 负责
         textView.backgroundColor = .secondarySystemBackground
         textView.layer.cornerRadius = 8
-        // 顶部留出空间给复制按钮（按钮高度约 32，加上间距）
         textView.textContainerInset = UIEdgeInsets(top: 48, left: 12, bottom: 12, right: 12)
         textView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(textView)
@@ -141,7 +141,8 @@ class NetworkLogDetailViewController: UIViewController {
             textView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             textView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             textView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            textView.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -24),
+            // 最小高度等于 scrollView，内容多时自动撑高
+            textView.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.heightAnchor, constant: -24),
             
             shareButton.topAnchor.constraint(equalTo: textView.topAnchor, constant: 8),
             shareButton.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -8),
