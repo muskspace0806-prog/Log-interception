@@ -2,6 +2,12 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.1] - 2026-03-18
+
+### Fixed
+- 响应 Body 内容区域支持滚动，JSON 结构完整展示不截断
+- 内容少时填满屏幕，内容多时自动撑高
+
 ## [1.2.0] - 2026-03-18
 
 ### Changed
