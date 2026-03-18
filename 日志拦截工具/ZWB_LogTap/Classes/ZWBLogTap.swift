@@ -87,19 +87,23 @@ public class ZWBLogTap {
     /// 启动网络调试工具
     /// - Parameter configuration: 配置选项
     public func start(with configuration: Configuration = Configuration()) {
+        // 解密配置每次都更新，不受 isEnabled 影响
+        if !configuration.decryptionConfigs.isEmpty {
+            EnvironmentManager.shared.setDecryptionConfigs(configuration.decryptionConfigs)
+        }
+        
         guard !isEnabled else {
-            print("⚠️ ZWB_LogTap 已经启动")
+            print("⚠️ ZWB_LogTap 已经启动，当前环境: \(EnvironmentManager.shared.currentEnvironment.name)")
             return
         }
         
         isEnabled = true
         
-        // 设置默认环境
-        EnvironmentManager.shared.setEnvironment(configuration.defaultEnvironment)
-        
-        // 设置解密配置（支持多环境）
-        if !configuration.decryptionConfigs.isEmpty {
-            EnvironmentManager.shared.setDecryptionConfigs(configuration.decryptionConfigs)
+        // 只在没有持久化记录时才使用 defaultEnvironment，否则恢复上次的环境
+        if !EnvironmentManager.shared.hasPersisted {
+            EnvironmentManager.shared.setEnvironment(configuration.defaultEnvironment)
+        } else {
+            print("🌍 [ZWBLogTap] 恢复持久化环境: \(EnvironmentManager.shared.currentEnvironment.name)")
         }
         
         // 启动 HTTP 拦截

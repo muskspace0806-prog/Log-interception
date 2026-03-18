@@ -72,11 +72,11 @@ class NetworkLogViewController: UIViewController {
         toolsButton.translatesAutoresizingMaskIntoConstraints = false
         toolBar.addSubview(toolsButton)
         
-        // 过滤按钮
+        // 切换环境按钮（原过滤按钮位置）
         filterButton = UIButton(type: .system)
-        filterButton.setTitle("过滤", for: .normal)
+        filterButton.setTitle("切换", for: .normal)
         filterButton.titleLabel?.font = .systemFont(ofSize: 16)
-        filterButton.addTarget(self, action: #selector(filterTapped), for: .touchUpInside)
+        filterButton.addTarget(self, action: #selector(switchEnvTapped), for: .touchUpInside)
         filterButton.translatesAutoresizingMaskIntoConstraints = false
         toolBar.addSubview(filterButton)
         
@@ -278,6 +278,24 @@ class NetworkLogViewController: UIViewController {
     @objc private func toolsTapped() {
         let toolsVC = DebugToolsViewController()
         present(toolsVC, animated: true)
+    }
+    
+    @objc private func switchEnvTapped() {
+        let currentEnv = EnvironmentManager.shared.currentEnvironment
+        let targetEnv = currentEnv.targetEnvironment
+        let alert = UIAlertController(
+            title: "环境切换",
+            message: "当前环境: \(currentEnv.name)\n\n确定要切换到 \(targetEnv.name) 吗？",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "切换", style: .default) { _ in
+            ZWBLogTap.shared.switchEnvironment()
+            let success = UIAlertController(title: "切换成功", message: "已切换到 \(targetEnv.name)", preferredStyle: .alert)
+            success.addAction(UIAlertAction(title: "确定", style: .default))
+            self.present(success, animated: true)
+        })
+        present(alert, animated: true)
     }
     
     @objc private func filterTapped() {

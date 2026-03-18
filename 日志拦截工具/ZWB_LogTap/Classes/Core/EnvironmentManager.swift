@@ -62,8 +62,13 @@ public class EnvironmentManager {
         }
     }
     
-    /// 当前环境
-    public private(set) var currentEnvironment: Environment = .test
+    private static let persistenceKey = "ZWBLogTap_CurrentEnvironment"
+    
+    /// 当前环境（自动从 UserDefaults 恢复）
+    public private(set) var currentEnvironment: Environment = {
+        let raw = UserDefaults.standard.string(forKey: EnvironmentManager.persistenceKey) ?? "test"
+        return EnvironmentManager.environmentFromRaw(raw)
+    }()
     
     /// 环境切换回调
     public var onEnvironmentSwitch: ((Environment) -> Void)?
@@ -73,30 +78,57 @@ public class EnvironmentManager {
     
     private init() {}
     
-    /// 设置当前环境
+    private static func environmentFromRaw(_ raw: String) -> Environment {
+        switch raw {
+        case "production": return .production
+        case "test":       return .test
+        default:
+            if raw.hasPrefix("custom:") {
+                return .custom(String(raw.dropFirst(7)))
+            }
+            return .test
+        }
+    }
+    
+    private static func rawFromEnvironment(_ env: Environment) -> String {
+        switch env {
+        case .test:              return "test"
+        case .production:        return "production"
+        case .custom(let name):  return "custom:\(name)"
+        }
+    }
+    
+    private func persist(_ environment: Environment) {
+        UserDefaults.standard.set(Self.rawFromEnvironment(environment), forKey: Self.persistenceKey)
+        UserDefaults.standard.synchronize()
+    }
+    
+    /// 是否已有持久化的环境记录
+    public var hasPersisted: Bool {
+        return UserDefaults.standard.object(forKey: Self.persistenceKey) != nil
+    }
+    
+    /// 设置当前环境（不持久化，仅用于首次默认值）
     public func setEnvironment(_ environment: Environment) {
         currentEnvironment = environment
+        persist(environment)
         print("🌍 [EnvironmentManager] 当前环境: \(environment.name)")
     }
     
-    /// 切换环境
+    /// 切换环境（持久化）
     public func switchEnvironment() {
         let newEnvironment = currentEnvironment.targetEnvironment
         currentEnvironment = newEnvironment
-        
+        persist(newEnvironment)
         print("🌍 [EnvironmentManager] 切换到: \(newEnvironment.name)")
-        
-        // 触发回调
         onEnvironmentSwitch?(newEnvironment)
     }
     
-    /// 切换到指定环境
+    /// 切换到指定环境（持久化）
     public func switchTo(_ environment: Environment) {
         currentEnvironment = environment
-        
+        persist(environment)
         print("🌍 [EnvironmentManager] 切换到: \(environment.name)")
-        
-        // 触发回调
         onEnvironmentSwitch?(environment)
     }
     
@@ -128,9 +160,8 @@ public class EnvironmentManager {
     /// - Parameter data: 原始响应数据
     /// - Returns: 解密后的数据，如果不需要解密或解密失败则返回原数据
     public func decryptResponseData(_ data: Data) -> Data {
-        // 获取当前环境的解密配置
         guard let config = decryptionConfigs[currentEnvironment], config.enabled else {
-            // 如果当前环境没有配置解密，直接返回原数据
+            print("🔓 [EnvironmentManager] 当前环境: \(currentEnvironment.name)，解密配置数量: \(decryptionConfigs.count)，无解密配置或已禁用，返回原数据")
             return data
         }
         

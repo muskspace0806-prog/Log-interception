@@ -329,18 +329,7 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func displayURLInfo() {
-        var info = "完整URL:\n\(request.url)\n\n"
-        
-        // 显示解密后的 URL 参数
-        let params = request.decryptedQueryParameters
-        if !params.isEmpty {
-            info += "URL参数（解密后） (\(params.count)):\n"
-            for (key, value) in params.sorted(by: { $0.key < $1.key }) {
-                info += "\(key): \(value)\n"
-            }
-        }
-        
-        textView.text = info
+        textView.text = "完整URL:\n\(request.url)"
     }
     
     private func displayRequestHeaders() {

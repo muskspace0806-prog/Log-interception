@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.1.8-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.1.8-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.2.0-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -100,7 +100,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.0.7', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.2.0', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -113,7 +113,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.0.7")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.2.0")
 ]
 ```
 
@@ -529,6 +529,21 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.2.0] - 2026-03-18
+
+#### Changed
+- 🎨 首页工具栏：`过滤` 按钮改为 `切换`，点击直接弹出环境切换确认框
+- 🎨 URL 过滤功能移至调试工具列表（工具 → URL 过滤）
+
+#### Fixed
+- 🐛 IM 消息详情：URL、主机、路径为空时自动跳过，修复参数 UI 重叠问题
+
+### [1.1.9] - 2026-03-18
+
+#### Fixed
+- 🐛 修复重启后解密配置未生效的问题（解密配置设置移至 isEnabled 检查之前）
+- 🐛 加入调试日志，便于排查解密失败原因
 
 ### [1.1.8] - 2026-03-18
 
