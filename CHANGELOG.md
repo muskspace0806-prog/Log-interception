@@ -2,7 +2,20 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
-## [1.0.7] - 2024-01-XX
+## [1.1.8] - 2026-03-18
+
+### Added
+- 环境状态持久化：切换测试/正式环境后，重启 app 自动恢复上次的环境（蓝色/红色按钮）
+- URL 过滤默认规则：首次安装自动写入 `/v1/heartbeat` 和 `format/webp`，用户可在 UI 中删除
+
+### Changed
+- `start()` 不再每次覆盖环境，优先恢复持久化的环境记录
+- URL 参数从"URL 信息"标签迁移到"请求 Body"标签显示
+
+### Fixed
+- 修复 app 重启后环境重置为测试环境的问题
+- 修复切换正式环境后解密配置未生效的问题
+
 
 ### Added
 - 响应数据解密功能（支持 AES-128-CBC）
