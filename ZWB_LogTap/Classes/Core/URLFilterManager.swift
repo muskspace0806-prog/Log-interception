@@ -12,8 +12,15 @@ public class URLFilterManager {
     public static let shared = URLFilterManager()
     
     private let userDefaultsKey = "ZWB_LogTap_FilteredURLs"
+    private let defaultsInitializedKey = "ZWB_LogTap_FilterDefaults_Initialized"
     
-    /// 过滤的 URL 列表
+    /// 默认过滤规则（首次安装时自动写入，用户可删除）
+    private let builtinDefaults: [String] = [
+        "/v1/heartbeat",
+        "format/webp"
+    ]
+    
+    /// 过滤的 URL 列表（包含默认 + 用户自定义）
     private(set) var filteredURLs: [String] = []
     
     private init() {
@@ -23,10 +30,7 @@ public class URLFilterManager {
     /// 添加过滤 URL
     public func addFilteredURL(_ url: String) {
         let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedURL.isEmpty, !filteredURLs.contains(trimmedURL) else {
-            return
-        }
-        
+        guard !trimmedURL.isEmpty, !filteredURLs.contains(trimmedURL) else { return }
         filteredURLs.append(trimmedURL)
         saveFilteredURLs()
         print("✅ [URLFilter] 已添加过滤: \(trimmedURL)")
@@ -50,12 +54,8 @@ public class URLFilterManager {
     
     /// 检查 URL 是否应该被过滤
     public func shouldFilter(url: String) -> Bool {
-        for filteredURL in filteredURLs {
-            if url.lowercased().contains(filteredURL.lowercased()) {
-                return true
-            }
-        }
-        return false
+        let lowercasedURL = url.lowercased()
+        return filteredURLs.contains { lowercasedURL.contains($0.lowercased()) }
     }
     
     /// 保存到 UserDefaults
@@ -64,9 +64,17 @@ public class URLFilterManager {
         UserDefaults.standard.synchronize()
     }
     
-    /// 从 UserDefaults 加载
+    /// 从 UserDefaults 加载，首次安装时写入默认规则
     private func loadFilteredURLs() {
-        if let urls = UserDefaults.standard.array(forKey: userDefaultsKey) as? [String] {
+        let initialized = UserDefaults.standard.bool(forKey: defaultsInitializedKey)
+        if !initialized {
+            // 首次安装，写入默认规则
+            filteredURLs = builtinDefaults
+            saveFilteredURLs()
+            UserDefaults.standard.set(true, forKey: defaultsInitializedKey)
+            UserDefaults.standard.synchronize()
+            print("✅ [URLFilter] 首次安装，已写入 \(builtinDefaults.count) 个默认过滤规则")
+        } else if let urls = UserDefaults.standard.array(forKey: userDefaultsKey) as? [String] {
             filteredURLs = urls
             print("✅ [URLFilter] 已加载 \(urls.count) 个过滤规则")
         }

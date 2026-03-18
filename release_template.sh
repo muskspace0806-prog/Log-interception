@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# ZWB_LogTap 1.0.7 发布脚本
+# ZWB_LogTap 发布脚本模板
+# 使用方法: ./release_template.sh 1.0.x "发布说明"
 
 set -e
 
@@ -8,8 +9,18 @@ set -e
 export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 export PATH="/opt/homebrew/lib/ruby/gems/3.4.0/bin:$PATH"
 
-VERSION="1.0.7"
+# 检查参数
+if [ -z "$1" ]; then
+    echo "❌ 错误: 请提供版本号"
+    echo "使用方法: ./release_template.sh 1.0.x \"发布说明\""
+    exit 1
+fi
+
+VERSION="$1"
+RELEASE_NOTES="${2:-Release version ${VERSION}}"
+
 echo "🚀 开始发布 ZWB_LogTap ${VERSION}..."
+echo ""
 
 # 验证 Ruby 环境
 RUBY_PATH=$(which ruby)
@@ -20,9 +31,9 @@ if [[ "$RUBY_PATH" == "/usr/bin/ruby" ]]; then
     exit 1
 fi
 echo "✅ 使用 Homebrew Ruby $(ruby -v | cut -d' ' -f2)"
+echo ""
 
 # 1. 检查工作目录是否干净
-echo ""
 echo "📋 步骤 1: 检查 Git 状态..."
 if [[ -n $(git status -s) ]]; then
     echo "⚠️  工作目录有未提交的更改"
@@ -35,9 +46,15 @@ if [[ -n $(git status -s) ]]; then
     fi
 fi
 
-# 2. 验证 podspec
+# 2. 更新 podspec 版本号
 echo ""
-echo "📋 步骤 2: 验证 podspec..."
+echo "📋 步骤 2: 更新 podspec 版本号..."
+sed -i '' "s/s.version.*=.*/s.version          = '${VERSION}'/" ZWB_LogTap.podspec
+echo "✅ podspec 版本号已更新为 ${VERSION}"
+
+# 3. 验证 podspec
+echo ""
+echo "📋 步骤 3: 验证 podspec..."
 pod lib lint ZWB_LogTap.podspec --allow-warnings
 
 if [ $? -ne 0 ]; then
@@ -47,44 +64,28 @@ fi
 
 echo "✅ podspec 验证通过"
 
-# 3. 提交更改
+# 4. 提交更改
 echo ""
-echo "📋 步骤 3: 提交更改到 Git..."
+echo "📋 步骤 4: 提交更改到 Git..."
 git add .
-git commit -m "Release version ${VERSION}
+git commit -m "${RELEASE_NOTES}"
 
-新功能:
-- 响应数据解密功能（AES-128-CBC）
-- 多环境解密配置
-- URL 过滤功能
-- URL 过滤规则管理
-
-优化:
-- URL 参数迁移到请求 Body 标签
-- HTTP 详情页默认显示响应 Body
-- 优化按钮布局
-- 调整浮动按钮底部距离
-
-修复:
-- 修复浮动按钮与 tabBar 重叠问题
-"
-
-# 4. 创建标签
+# 5. 创建标签
 echo ""
-echo "📋 步骤 4: 创建 Git 标签..."
+echo "📋 步骤 5: 创建 Git 标签..."
 git tag -a ${VERSION} -m "Release ${VERSION}"
 
-# 5. 推送到远程
+# 6. 推送到远程
 echo ""
-echo "📋 步骤 5: 推送到 GitHub..."
+echo "📋 步骤 6: 推送到 GitHub..."
 git push origin main
 git push origin ${VERSION}
 
 echo "✅ 代码已推送到 GitHub"
 
-# 6. 发布到 CocoaPods
+# 7. 发布到 CocoaPods
 echo ""
-echo "📋 步骤 6: 发布到 CocoaPods..."
+echo "📋 步骤 7: 发布到 CocoaPods..."
 read -p "是否发布到 CocoaPods? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -92,6 +93,11 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     if [ $? -eq 0 ]; then
         echo "✅ 已成功发布到 CocoaPods"
+        
+        # 验证发布
+        echo ""
+        echo "📋 验证发布..."
+        pod trunk info ZWB_LogTap
     else
         echo "❌ CocoaPods 发布失败"
         exit 1
@@ -105,7 +111,8 @@ echo ""
 echo "🎉 ZWB_LogTap ${VERSION} 发布完成！"
 echo ""
 echo "📝 后续步骤:"
-echo "1. 在 GitHub 上创建 Release (https://github.com/YOUR_USERNAME/ZWB_LogTap/releases/new)"
-echo "2. 使用标签: ${VERSION}"
-echo "3. 复制 RELEASE_NOTES_1.0.7.md 的内容作为 Release 说明"
+echo "1. 在 GitHub 上创建 Release"
+echo "   https://github.com/muskspace0806-prog/Log-interception/releases/new"
+echo "2. 选择标签: ${VERSION}"
+echo "3. 添加 Release 说明"
 echo ""
