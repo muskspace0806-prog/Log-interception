@@ -99,15 +99,17 @@ class WebSocketMessageDetailViewController: UIViewController {
     private func displayMessage() {
         guard let message = message else { return }
         
-        // 基本信息
-        addSection(title: "基本信息", items: [
+        // 基本信息：过滤掉空值，避免 UI 重叠
+        var items: [(String, String)] = [
             ("类型", "\(message.type.emoji) \(message.type.rawValue)"),
-            ("时间", message.timeString),
-            ("URL", message.url),
-            ("主机", message.host),
-            ("路径", message.path),
-            ("数据大小", message.dataSize)
-        ])
+            ("时间", message.timeString)
+        ]
+        if !message.url.isEmpty  { items.append(("URL", message.url)) }
+        if !message.host.isEmpty { items.append(("主机", message.host)) }
+        if !message.path.isEmpty && message.path != "/" { items.append(("路径", message.path)) }
+        items.append(("数据大小", message.dataSize))
+        
+        addSection(title: "基本信息", items: items)
         
         // 消息内容
         if message.type == .send || message.type == .receive {

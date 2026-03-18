@@ -22,6 +22,7 @@ class DebugToolsViewController: UIViewController {
             ToolItem(title: "内存监控", icon: "💾", subtitle: "实时监控内存使用")
         ]),
         Section(title: "日志管理", items: [
+            ToolItem(title: "URL 过滤", icon: "🔗", subtitle: "过滤不需要的 URL 请求"),
             ToolItem(title: "HTTP 日志", icon: "🔍", subtitle: "查看网络请求日志"),
             ToolItem(title: "IM 日志", icon: "💬", subtitle: "查看 WebSocket 消息")
         ])
@@ -153,6 +154,9 @@ extension DebugToolsViewController: UITableViewDelegate, UITableViewDataSource {
             present(vc, animated: true)
         case "内存监控":
             let vc = MemoryMonitorViewController()
+            present(vc, animated: true)
+        case "URL 过滤":
+            let vc = URLFilterViewController()
             present(vc, animated: true)
         case "HTTP 日志", "IM 日志":
             // 返回到主页面并切换到对应 tab
