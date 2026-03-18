@@ -160,9 +160,8 @@ public class EnvironmentManager {
     /// - Parameter data: 原始响应数据
     /// - Returns: 解密后的数据，如果不需要解密或解密失败则返回原数据
     public func decryptResponseData(_ data: Data) -> Data {
-        // 获取当前环境的解密配置
         guard let config = decryptionConfigs[currentEnvironment], config.enabled else {
-            // 如果当前环境没有配置解密，直接返回原数据
+            print("🔓 [EnvironmentManager] 当前环境: \(currentEnvironment.name)，解密配置数量: \(decryptionConfigs.count)，无解密配置或已禁用，返回原数据")
             return data
         }
         
