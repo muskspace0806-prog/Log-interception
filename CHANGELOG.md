@@ -2,6 +2,15 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.3] - 2026-03-25
+
+### Added
+- IM 列表消息行优先显示 `Route: roomMicCharmPush` 格式，字体加大加粗
+- IM 过滤支持 route 字段匹配（过滤 heartbeat 同时过滤 IM 心跳消息）
+
+### Changed
+- 悬浮入口按钮从 40×40 放大至 50×50
+
 ## [1.2.2] - 2026-03-18
 
 ### Added
