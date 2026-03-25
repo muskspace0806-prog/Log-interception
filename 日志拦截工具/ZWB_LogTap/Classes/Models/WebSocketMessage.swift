@@ -112,6 +112,17 @@ public struct WebSocketMessage: Identifiable {
         return dataString
     }
     
+    // 从消息 JSON 中提取 route 字段
+    public var route: String? {
+        guard let data = dataString.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let route = json["route"] as? String,
+              !route.isEmpty else {
+            return nil
+        }
+        return route
+    }
+    
     // 数据大小
     public var dataSize: String {
         let size = dataString.utf8.count

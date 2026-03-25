@@ -98,12 +98,12 @@ class WebSocketMessageCell: UITableViewCell {
             typeLabel.textColor = .systemBlue
             urlLabel.textColor = .label
             dataLabel.textColor = .secondaryLabel
-            dataLabel.text = message.dataPreview
+            dataLabel.text = message.route ?? message.dataPreview
         case .receive:
             typeLabel.textColor = .systemOrange
             urlLabel.textColor = .label
             dataLabel.textColor = .secondaryLabel
-            dataLabel.text = message.dataPreview
+            dataLabel.text = message.route ?? message.dataPreview
         case .error:
             typeLabel.textColor = .systemRed
             urlLabel.textColor = .systemRed  // 错误时 URL 显示为红色
