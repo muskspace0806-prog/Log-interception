@@ -36,8 +36,8 @@ class WebSocketMessageCell: UITableViewCell {
         timeLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(timeLabel)
         
-        // URL 标签
-        urlLabel.font = .systemFont(ofSize: 14)
+        // URL/Route 标签
+        urlLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         urlLabel.textColor = .label
         urlLabel.numberOfLines = 1
         urlLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -80,7 +80,11 @@ class WebSocketMessageCell: UITableViewCell {
     func configure(with message: WebSocketMessage) {
         typeLabel.text = "\(message.type.emoji) \(message.type.rawValue)"
         timeLabel.text = message.timeString
-        urlLabel.text = message.route ?? message.host
+        if let route = message.route {
+            urlLabel.text = "Route: \(route)"
+        } else {
+            urlLabel.text = message.host
+        }
         sizeLabel.text = message.dataSize
         
         switch message.type {
