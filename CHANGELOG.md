@@ -2,6 +2,12 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.4] - 2026-03-25
+
+### Fixed
+- 默认过滤规则 `/v1/heartbeat` 改为 `heartbeat`，新安装后 IM 心跳消息自动过滤
+- 老用户版本迁移：自动补充新默认规则
+
 ## [1.2.3] - 2026-03-25
 
 ### Added
