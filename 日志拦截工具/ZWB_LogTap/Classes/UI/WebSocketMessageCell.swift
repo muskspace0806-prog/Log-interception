@@ -80,7 +80,7 @@ class WebSocketMessageCell: UITableViewCell {
     func configure(with message: WebSocketMessage) {
         typeLabel.text = "\(message.type.emoji) \(message.type.rawValue)"
         timeLabel.text = message.timeString
-        urlLabel.text = message.host
+        urlLabel.text = message.route ?? message.host
         sizeLabel.text = message.dataSize
         
         switch message.type {
@@ -98,12 +98,12 @@ class WebSocketMessageCell: UITableViewCell {
             typeLabel.textColor = .systemBlue
             urlLabel.textColor = .label
             dataLabel.textColor = .secondaryLabel
-            dataLabel.text = message.route ?? message.dataPreview
+            dataLabel.text = message.dataPreview
         case .receive:
             typeLabel.textColor = .systemOrange
             urlLabel.textColor = .label
             dataLabel.textColor = .secondaryLabel
-            dataLabel.text = message.route ?? message.dataPreview
+            dataLabel.text = message.dataPreview
         case .error:
             typeLabel.textColor = .systemRed
             urlLabel.textColor = .systemRed  // 错误时 URL 显示为红色
