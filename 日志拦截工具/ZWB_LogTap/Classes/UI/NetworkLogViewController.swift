@@ -245,6 +245,12 @@ class NetworkLogViewController: UIViewController {
         // 应用 URL 过滤（优先级最高）
         filteredWSMessages = filteredWSMessages.filter { !URLFilterManager.shared.shouldFilter(url: $0.url) }
         
+        // 过滤掉 route 在过滤列表中的消息（如 heartbeat）
+        filteredWSMessages = filteredWSMessages.filter { msg in
+            guard let route = msg.route else { return true }
+            return !URLFilterManager.shared.shouldFilter(url: route)
+        }
+        
         // 应用搜索
         if !searchKeyword.isEmpty {
             filteredWSMessages = filteredWSMessages.filter {
