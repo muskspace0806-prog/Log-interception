@@ -35,15 +35,15 @@ class FloatingButton: UIButton {
         // 设置按钮样式
         updateEnvironmentColor()
         setTitle("📊", for: .normal)
-        titleLabel?.font = UIFont.systemFont(ofSize: 20)
-        layer.cornerRadius = 20
+        titleLabel?.font = UIFont.systemFont(ofSize: 24)
+        layer.cornerRadius = 25
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 2)
         layer.shadowRadius = 4
         layer.shadowOpacity = 0.3
         
-        // 设置大小为 40x40
-        frame.size = CGSize(width: 40, height: 40)
+        // 设置大小为 50x50
+        frame.size = CGSize(width: 50, height: 50)
         
         // 监听通知，确保始终在最顶层
         NotificationCenter.default.addObserver(self, selector: #selector(bringToFront), name: UIWindow.didBecomeVisibleNotification, object: nil)
