@@ -112,15 +112,23 @@ public struct WebSocketMessage: Identifiable {
         return dataString
     }
     
-    // 从消息 JSON 中提取 route 字段
+    // 从消息 JSON 中提取 route 字段（支持加密消息）
     public var route: String? {
-        guard let data = dataString.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let route = json["route"] as? String,
-              !route.isEmpty else {
-            return nil
+        // 先尝试原始数据
+        if let data = dataString.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let route = json["route"] as? String, !route.isEmpty {
+            return route
         }
-        return route
+        // 再尝试解密后的数据
+        if let data = dataString.data(using: .utf8) {
+            let decrypted = EnvironmentManager.shared.decryptResponseData(data)
+            if let json = try? JSONSerialization.jsonObject(with: decrypted) as? [String: Any],
+               let route = json["route"] as? String, !route.isEmpty {
+                return route
+            }
+        }
+        return nil
     }
     
     // 数据大小

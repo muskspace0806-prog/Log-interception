@@ -2,6 +2,13 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.5] - 2026-03-27
+
+### Fixed
+- HTTP/IM tab 选择持久化，下次打开自动恢复上次选择
+- 正式环境 IM 消息 route 字段提取支持加密消息（先解密再提取）
+- IM 消息分享内容改为解密后的数据
+
 ## [1.2.4] - 2026-03-25
 
 ### Fixed

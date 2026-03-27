@@ -20,6 +20,7 @@ class NetworkLogViewController: UIViewController {
     private var exportButton: UIButton!
     
     private var currentType: LogType = .http
+    private static let lastTabKey = "ZWBLogTap_LastTabType"
     private var requests: [InterceptedRequest] = []
     private var filteredRequests: [InterceptedRequest] = []
     private var wsMessages: [WebSocketMessage] = []
@@ -35,6 +36,13 @@ class NetworkLogViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        // 恢复上次选择的 tab
+        let savedIndex = UserDefaults.standard.integer(forKey: Self.lastTabKey)
+        if savedIndex == 1 {
+            currentType = .websocket
+            typeSegment.selectedSegmentIndex = 1
+            typeChanged()
+        }
         loadData()
         setupNotification()
     }
@@ -326,6 +334,8 @@ class NetworkLogViewController: UIViewController {
     
     @objc private func typeChanged() {
         currentType = typeSegment.selectedSegmentIndex == 0 ? .http : .websocket
+        // 持久化 tab 选择
+        UserDefaults.standard.set(typeSegment.selectedSegmentIndex, forKey: Self.lastTabKey)
         
         // 更新过滤器选项
         if currentType == .http {

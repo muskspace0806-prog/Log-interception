@@ -280,7 +280,7 @@ class WebSocketMessageDetailViewController: UIViewController {
         数据大小: \(message.dataSize)
         
         【消息内容】
-        \(message.dataString)
+        \(message.formattedDataString)
         
         =====================
         """
