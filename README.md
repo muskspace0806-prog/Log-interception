@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.2.5-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.2.6-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.2.5-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.2.6-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -100,7 +100,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.2.5', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.2.6', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -529,6 +529,11 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.2.6] - 2026-03-27
+
+#### Fixed
+- 🐛 搜索框内容持久化，下次打开自动恢复上次搜索关键词
 
 ### [1.2.5] - 2026-03-27
 

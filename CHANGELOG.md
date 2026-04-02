@@ -2,6 +2,11 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.6] - 2026-03-27
+
+### Fixed
+- 搜索框内容持久化，下次打开自动恢复上次搜索关键词
+
 ## [1.2.5] - 2026-03-27
 
 ### Fixed

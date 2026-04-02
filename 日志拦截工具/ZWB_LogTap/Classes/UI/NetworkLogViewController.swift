@@ -21,6 +21,7 @@ class NetworkLogViewController: UIViewController {
     
     private var currentType: LogType = .http
     private static let lastTabKey = "ZWBLogTap_LastTabType"
+    private static let lastSearchKey = "ZWBLogTap_LastSearchKeyword"
     private var requests: [InterceptedRequest] = []
     private var filteredRequests: [InterceptedRequest] = []
     private var wsMessages: [WebSocketMessage] = []
@@ -42,6 +43,11 @@ class NetworkLogViewController: UIViewController {
             currentType = .websocket
             typeSegment.selectedSegmentIndex = 1
             typeChanged()
+        }
+        // 恢复上次搜索关键词
+        if let savedKeyword = UserDefaults.standard.string(forKey: Self.lastSearchKey), !savedKeyword.isEmpty {
+            searchKeyword = savedKeyword
+            searchBar.text = savedKeyword
         }
         loadData()
         setupNotification()
@@ -422,6 +428,7 @@ extension NetworkLogViewController: UISearchBarDelegate {
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchKeyword = searchText
+        UserDefaults.standard.set(searchText, forKey: Self.lastSearchKey)
         applyFilters()
     }
     
