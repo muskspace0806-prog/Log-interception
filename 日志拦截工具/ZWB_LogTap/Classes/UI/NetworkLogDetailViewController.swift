@@ -268,38 +268,82 @@ class NetworkLogDetailViewController: UIViewController {
     }
     
     private func shareCurrentTabContent() {
-        // 获取当前显示的内容
-        let currentContent = textView.text ?? ""
-        let tabName = tabTitles[selectedTabIndex]
+        // 直接从数据源获取完整内容，不依赖 textView.text
+        let currentContent: String
+        switch selectedTabIndex {
+        case 0: currentContent = getBasicInfoText()
+        case 1: currentContent = "完整URL:\n\(request.url)"
+        case 2: currentContent = getRequestHeadersText()
+        case 3: currentContent = getRequestBodyText()
+        case 4: currentContent = getResponseHeadersText()
+        case 5: currentContent = request.responseBodyString ?? "无响应Body"
+        case 6: currentContent = request.error.map { "错误信息:\n\n\($0)" } ?? "无异常信息"
+        default: currentContent = textView.text ?? ""
+        }
         
-        // 创建临时文件
+        let tabName = tabTitles[selectedTabIndex]
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
         let timeString = dateFormatter.string(from: request.startTime)
         let fileName = "network_\(tabName)_\(timeString).txt"
-        
         let tempDir = FileManager.default.temporaryDirectory
         let fileURL = tempDir.appendingPathComponent(fileName)
         
         do {
             try currentContent.write(to: fileURL, atomically: true, encoding: .utf8)
-            
-            // 调用系统分享
             let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
-            
-            // iPad 需要设置 popover
             if let popover = activityVC.popoverPresentationController {
                 popover.sourceView = view
                 popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
                 popover.permittedArrowDirections = []
             }
-            
             present(activityVC, animated: true)
         } catch {
             let alert = UIAlertController(title: "分享失败", message: error.localizedDescription, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "确定", style: .default))
             present(alert, animated: true)
         }
+    }
+    
+    private func getBasicInfoText() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        var info = "时间: \(formatter.string(from: request.startTime))\n\n路由: \(request.path)\n\n请求类型: \(request.method)\n\n"
+        if let statusCode = request.statusCode { info += "状态码: \(statusCode)\n\n" }
+        if let duration = request.duration { info += "耗时: \(String(format: "%.0fms", duration * 1000))\n\n" }
+        info += "日志ID: \(request.id)\n\nURL短链接: \(request.path)"
+        return info
+    }
+    
+    private func getRequestHeadersText() -> String {
+        guard !request.headers.isEmpty else { return "无请求Headers" }
+        var info = "请求Headers (\(request.headers.count)):\n\n"
+        for (key, value) in request.headers.sorted(by: { $0.key < $1.key }) { info += "\(key): \(value)\n" }
+        return info
+    }
+    
+    private func getRequestBodyText() -> String {
+        var info = ""
+        let params = request.decryptedQueryParameters
+        if !params.isEmpty {
+            info += "URL参数 (\(params.count)):\n"
+            for (key, value) in params.sorted(by: { $0.key < $1.key }) { info += "\(key): \(value)\n" }
+            info += "\n"
+        }
+        if let bodyString = request.requestBodyString {
+            if !info.isEmpty { info += "请求Body:\n" }
+            info += bodyString
+        } else if info.isEmpty {
+            info = "无URL参数和请求Body"
+        }
+        return info
+    }
+    
+    private func getResponseHeadersText() -> String {
+        guard let headers = request.responseHeaders, !headers.isEmpty else { return "无响应Headers" }
+        var info = "响应Headers (\(headers.count)):\n\n"
+        for (key, value) in headers.sorted(by: { $0.key < $1.key }) { info += "\(key): \(value)\n" }
+        return info
     }
     
     private func displayBasicInfo() {

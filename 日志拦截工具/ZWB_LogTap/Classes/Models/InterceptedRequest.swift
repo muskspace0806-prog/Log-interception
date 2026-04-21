@@ -84,28 +84,33 @@ public struct InterceptedRequest: Identifiable {
     public var responseBodyString: String? {
         guard let data = responseData else { return nil }
         
-        // 先尝试解密（如果配置了解密）
+        // 先尝试解密
         let decryptedData = EnvironmentManager.shared.decryptResponseData(data)
         
-        // 尝试解析为 JSON
+        // 尝试解析为 JSON 并格式化
         if let json = try? JSONSerialization.jsonObject(with: decryptedData),
            let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
            let string = String(data: jsonData, encoding: .utf8) {
             return string
         }
         
-        // 尝试返回原始字符串
-        if let string = String(data: decryptedData, encoding: .utf8) {
-            return string
+        // 尝试转为字符串后再解析 JSON（有些响应是 JSON 字符串套 JSON）
+        if let rawString = String(data: decryptedData, encoding: .utf8) {
+            // 如果字符串本身是 JSON，再格式化一次
+            if let innerData = rawString.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: innerData),
+               let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+               let formatted = String(data: jsonData, encoding: .utf8) {
+                return formatted
+            }
+            return rawString
         }
         
-        // 如果解密后的数据无法转换为 UTF-8，尝试使用原始数据
+        // 解密失败，尝试原始数据
         if decryptedData != data, let string = String(data: data, encoding: .utf8) {
-            print("⚠️ [InterceptedRequest] 解密后的数据无法转换为 UTF-8，使用原始数据")
             return string
         }
         
-        // 最后尝试：返回十六进制表示
         return "⚠️ 无法解析为文本（可能是二进制数据）\n数据大小: \(decryptedData.count) 字节"
     }
     

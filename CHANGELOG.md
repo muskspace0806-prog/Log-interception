@@ -2,6 +2,15 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.7] - 2026-04-02
+
+### Added
+- 主页面支持左边缘侧滑手势关闭
+
+### Fixed
+- 响应 Body JSON 格式化增强，支持字符串套 JSON 二次解析
+- 分享内容直接从数据源读取，解决内容不全问题
+
 ## [1.2.6] - 2026-03-27
 
 ### Fixed

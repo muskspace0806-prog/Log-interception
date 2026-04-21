@@ -37,6 +37,7 @@ class NetworkLogViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupSwipeGesture()
         // 恢复上次选择的 tab
         let savedIndex = UserDefaults.standard.integer(forKey: Self.lastTabKey)
         if savedIndex == 1 {
@@ -185,6 +186,19 @@ class NetworkLogViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+    
+    private func setupSwipeGesture() {
+        let swipe = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
+        swipe.edges = .left
+        view.addGestureRecognizer(swipe)
+    }
+    
+    @objc private func handleEdgePan(_ gesture: UIScreenEdgePanGestureRecognizer) {
+        guard gesture.state == .recognized else { return }
+        dismiss(animated: true) {
+            ZWBLogTap.shared.clearCurrentViewController()
+        }
     }
     
     private var refreshTimer: Timer?
