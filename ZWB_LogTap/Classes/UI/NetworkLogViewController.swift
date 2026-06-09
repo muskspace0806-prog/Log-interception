@@ -205,6 +205,7 @@ class NetworkLogViewController: UIViewController {
     
     private func setupNotification() {
         NotificationCenter.default.addObserver(self, selector: #selector(requestsUpdated), name: .networkRequestIntercepted, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(mockReceiveSelectionUpdated), name: .webSocketMockReceiveSelectionChanged, object: nil)
         
         // 使用定时器定期刷新 WebSocket 消息，避免通知崩溃
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
@@ -222,14 +223,28 @@ class NetworkLogViewController: UIViewController {
         loadData()
     }
     
+    @objc private func mockReceiveSelectionUpdated() {
+        loadData()
+    }
+    
     @objc private func wsMessagesUpdated() {
         // 不再使用，保留以兼容
     }
     
     private func loadData() {
         requests = NetworkInterceptorManager.shared.getAllRequests()
-        wsMessages = WebSocketInterceptor.interceptedMessages
+        wsMessages = mergedWebSocketMessagesWithPinnedMockReceive()
         applyFilters()
+    }
+    
+    private func mergedWebSocketMessagesWithPinnedMockReceive() -> [WebSocketMessage] {
+        let messages = WebSocketInterceptor.interceptedMessages
+        guard let selectedMessage = WebSocketMockReceiveStore.shared.selectedMessage else {
+            return messages
+        }
+        
+        let remainingMessages = messages.filter { $0.id != selectedMessage.id }
+        return [selectedMessage] + remainingMessages
     }
     
     private func applyFilters() {
@@ -346,6 +361,7 @@ class NetworkLogViewController: UIViewController {
                 NetworkInterceptorManager.shared.clearAllRequests()
             } else {
                 WebSocketInterceptor.clearAllMessages()
+                WebSocketMockReceiveStore.shared.clear()
             }
             self.loadData()
         })
@@ -418,9 +434,13 @@ extension NetworkLogViewController: UITableViewDelegate, UITableViewDataSource {
         } else {
             let message = filteredWSMessages[indexPath.row]
             let cell = tableView.dequeueReusableCell(withIdentifier: "WebSocketMessageCell", for: indexPath) as! WebSocketMessageCell
-            cell.configure(with: message)
+            cell.configure(with: message, isMockSelected: ZWBLogTap.shared.isSelectedWebSocketMockReceive(message))
             cell.onMockReceive = { [weak self] message in
                 guard let self = self else { return }
+                let didSelect = ZWBLogTap.shared.toggleWebSocketMockReceiveSelection(message)
+                self.loadData()
+                guard didSelect else { return }
+                
                 let didTrigger = ZWBLogTap.shared.triggerWebSocketMockReceive(message)
                 if !didTrigger {
                     self.showAlert(message: "未配置 IM 模拟接收处理入口")

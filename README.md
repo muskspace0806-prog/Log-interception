@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.2.8-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.2.9-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.2.8-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.2.9-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -18,7 +18,7 @@
 - ✅ **环境切换** - 支持测试/正式环境快速切换，按钮颜色区分
 - ✅ **响应数据解密** - 支持 AES-128-CBC 解密，多环境配置
 - ✅ **URL 过滤** - 支持过滤指定 URL，不显示在日志列表
-- ✅ **IM 模拟接收** - 接收消息一键重放到业务处理入口，验证 UI 渲染
+- ✅ **IM 模拟接收** - 接收消息一键重放到业务处理入口，支持唯一缓存、置顶和悬浮触发
 - ✅ **模拟弱网** - 支持断网、限速、延迟等网络模拟
 - ✅ **Crash 监控** - 自动捕获并记录应用崩溃日志
 - ✅ **内存监控** - 实时监控内存使用情况
@@ -70,6 +70,8 @@
 - ✅ 消息大小实时显示
 - ✅ 完整的消息内容查看
 - ✅ 接收消息支持“模拟接收”重放，快速验证 IM UI 渲染
+- ✅ 支持持久化唯一一条模拟接收消息，重启后保留按钮选中态并置顶
+- ✅ App 页面显示可拖拽 IM 悬浮入口，点击后触发已缓存消息
 - ✅ 支持复制和分享功能
 
 ### 调试工具
@@ -102,7 +104,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.2.8', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.2.9', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -409,6 +411,8 @@ ZWBLogTap.logWebSocketError(url: "wss://example.com", error: "连接超时")
 
 如果你的 IM UI 渲染依赖业务接收处理链路，可以注册模拟接收回调。之后在 IM 列表的“接收”消息 cell 点击“模拟接收”，工具会把历史消息重新投递给你的业务处理入口。
 
+点击“模拟接收”会将该接收消息设为唯一缓存项：按钮变红、旁边勾选框选中、消息置顶。再次点击同一条会取消缓存；点击其他接收消息会自动替换旧缓存。App 重启后只恢复选中状态和置顶，不会自动触发。App 页面会显示可拖拽的 IM 悬浮入口，点击后触发当前缓存的消息。
+
 ```swift
 ZWBLogTap.shared.setWebSocketMockReceiveHandler { message in
     IMManager.shared.handleReceiveMessage(message.dataString)
@@ -420,6 +424,7 @@ ZWBLogTap.shared.setWebSocketMockReceiveHandler { message in
 2. 点击右下角悬浮按钮 📊
 3. 切换到 "IM" 标签
 4. 查看所有 WebSocket 消息，或点击接收消息的“模拟接收”验证 UI 渲染
+5. 回到 App 页面后点击可拖拽的 IM 悬浮入口，重复触发已缓存的模拟接收消息
 
 **详细文档：**
 - 📖 [WebSocket 手动日志完整指南](WEBSOCKET_MANUAL_LOGGING.md)
@@ -489,7 +494,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.2.8', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.2.9', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -541,6 +546,16 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.2.9] - 2026-06-09
+
+#### Added
+- ✅ IM 模拟接收支持唯一持久化缓存，App 重启后保留按钮选中态
+- ✅ 已选模拟接收消息自动置顶，重启后仍保持置顶
+- ✅ 新增可拖拽 IM 悬浮入口，点击触发当前缓存的模拟接收消息
+
+#### Changed
+- 🔁 “模拟接收”按钮支持红色选中态和旁侧勾选框，同一时间仅允许一条消息选中
 
 ### [1.2.8] - 2026-06-09
 

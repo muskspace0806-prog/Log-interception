@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum WebSocketMessageType: String {
+public enum WebSocketMessageType: String, Codable {
     case connect = "连接"
     case disconnect = "断开"
     case send = "发送"
@@ -35,7 +35,7 @@ public enum WebSocketMessageType: String {
     }
 }
 
-public struct WebSocketMessage: Identifiable {
+public struct WebSocketMessage: Identifiable, Codable {
     public let id: String
     public let url: String
     public let type: WebSocketMessageType
@@ -51,6 +51,14 @@ public struct WebSocketMessage: Identifiable {
         
         // 安全地转换为字符串
         self.dataString = Self.convertDataToString(data)
+    }
+    
+    public init(id: String, url: String, type: WebSocketMessageType, dataString: String, timestamp: Date) {
+        self.id = id
+        self.url = url
+        self.type = type
+        self.dataString = dataString
+        self.timestamp = timestamp
     }
     
     // 静态方法：安全地转换数据为字符串 - 极简版本

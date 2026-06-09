@@ -17,6 +17,8 @@ public class ZWBLogTap {
 
     /// 悬浮按钮
     private var floatingButton: FloatingButton?
+    private var mockReceiveFloatingButton: MockReceiveFloatingButton?
+    private var mockReceiveSelectionObserver: NSObjectProtocol?
 
     /// 当前显示的日志页面
     private weak var currentLogViewController: NetworkLogViewController?
@@ -129,7 +131,16 @@ public class ZWBLogTap {
         if configuration.showFloatingButton {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.showFloatingButton(at: configuration.floatingButtonPosition)
+                self.updateMockReceiveFloatingButtonVisibility()
             }
+        }
+        
+        mockReceiveSelectionObserver = NotificationCenter.default.addObserver(
+            forName: .webSocketMockReceiveSelectionChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateMockReceiveFloatingButtonVisibility()
         }
     }
 
@@ -139,6 +150,11 @@ public class ZWBLogTap {
 
         isEnabled = false
         hideFloatingButton()
+        hideMockReceiveFloatingButton()
+        if let observer = mockReceiveSelectionObserver {
+            NotificationCenter.default.removeObserver(observer)
+            mockReceiveSelectionObserver = nil
+        }
 
         print("✅ ZWB_LogTap 已停止")
     }
@@ -184,6 +200,7 @@ public class ZWBLogTap {
     public func clearAllLogs() {
         NetworkInterceptorManager.shared.clearAllRequests()
         WebSocketInterceptor.clearAllMessages()
+        WebSocketMockReceiveStore.shared.clear()
         print("✅ 已清空所有日志")
     }
 
@@ -212,6 +229,21 @@ public class ZWBLogTap {
             return false
         }
         handler(message)
+        return true
+    }
+    
+    internal func isSelectedWebSocketMockReceive(_ message: WebSocketMessage) -> Bool {
+        WebSocketMockReceiveStore.shared.isSelected(message)
+    }
+    
+    @discardableResult
+    internal func toggleWebSocketMockReceiveSelection(_ message: WebSocketMessage) -> Bool {
+        if WebSocketMockReceiveStore.shared.isSelected(message) {
+            WebSocketMockReceiveStore.shared.clear()
+            return false
+        }
+        
+        WebSocketMockReceiveStore.shared.select(message)
         return true
     }
 
@@ -308,6 +340,62 @@ public class ZWBLogTap {
     private func hideFloatingButton() {
         floatingButton?.hide()
         floatingButton = nil
+    }
+    
+    private func updateMockReceiveFloatingButtonVisibility() {
+        DispatchQueue.main.async {
+            guard self.isEnabled,
+                  WebSocketMockReceiveStore.shared.selectedMessage != nil,
+                  let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+                self.hideMockReceiveFloatingButton()
+                return
+            }
+            
+            if self.mockReceiveFloatingButton == nil {
+                let button = MockReceiveFloatingButton()
+                button.onTap = { [weak self] in
+                    self?.triggerSelectedWebSocketMockReceiveFromFloatingButton()
+                }
+                self.mockReceiveFloatingButton = button
+            }
+            
+            self.mockReceiveFloatingButton?.show(in: window)
+        }
+    }
+    
+    private func hideMockReceiveFloatingButton() {
+        mockReceiveFloatingButton?.hide()
+        mockReceiveFloatingButton = nil
+    }
+    
+    private func triggerSelectedWebSocketMockReceiveFromFloatingButton() {
+        guard let message = WebSocketMockReceiveStore.shared.selectedMessage else {
+            showToastAlert(message: "未选择 IM 模拟接收消息")
+            return
+        }
+        
+        guard triggerWebSocketMockReceive(message) else {
+            showToastAlert(message: "未配置 IM 模拟接收处理入口")
+            return
+        }
+    }
+    
+    private func showToastAlert(message: String) {
+        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }),
+              var topVC = window.rootViewController else {
+            print("⚠️ \(message)")
+            return
+        }
+        
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        topVC.present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            alert.dismiss(animated: true)
+        }
     }
 
     /// 清除当前显示的 ViewController 引用
