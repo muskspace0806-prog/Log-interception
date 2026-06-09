@@ -8,76 +8,115 @@
 import UIKit
 
 class WebSocketMessageCell: UITableViewCell {
-    
+
     private let typeLabel = UILabel()
     private let timeLabel = UILabel()
     private let urlLabel = UILabel()
     private let dataLabel = UILabel()
     private let sizeLabel = UILabel()
-    
+    private let mockReceiveButton = UIButton(type: .system)
+
+    var onMockReceive: ((WebSocketMessage) -> Void)?
+    private var message: WebSocketMessage?
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private func setupUI() {
         // 类型标签
         typeLabel.font = .systemFont(ofSize: 16, weight: .bold)
         typeLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(typeLabel)
-        
+
         // 时间标签
         timeLabel.font = .systemFont(ofSize: 12)
         timeLabel.textColor = .secondaryLabel
         timeLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(timeLabel)
-        
+
         // URL/Route 标签
         urlLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         urlLabel.textColor = .label
         urlLabel.numberOfLines = 1
         urlLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(urlLabel)
-        
+
         // 数据标签
         dataLabel.font = .systemFont(ofSize: 13)
         dataLabel.textColor = .secondaryLabel
         dataLabel.numberOfLines = 2
         dataLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(dataLabel)
-        
+
         // 大小标签
         sizeLabel.font = .systemFont(ofSize: 12)
         sizeLabel.textColor = .tertiaryLabel
         sizeLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(sizeLabel)
-        
+
+        if #available(iOS 15.0, *) {
+            var title = AttributedString("模拟接收")
+            title.font = .systemFont(ofSize: 13, weight: .semibold)
+            var configuration = UIButton.Configuration.filled()
+            configuration.attributedTitle = title
+            configuration.baseForegroundColor = .white
+            configuration.baseBackgroundColor = .systemOrange
+            configuration.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+            configuration.cornerStyle = .small
+            mockReceiveButton.configuration = configuration
+        } else {
+            mockReceiveButton.setTitle("模拟接收", for: .normal)
+            mockReceiveButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+            mockReceiveButton.setTitleColor(.white, for: .normal)
+            mockReceiveButton.backgroundColor = .systemOrange
+            mockReceiveButton.layer.cornerRadius = 4
+            mockReceiveButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+        }
+        mockReceiveButton.addTarget(self, action: #selector(mockReceiveTapped), for: .touchUpInside)
+        mockReceiveButton.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(mockReceiveButton)
+
         NSLayoutConstraint.activate([
             typeLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
             typeLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            
+
             timeLabel.centerYAnchor.constraint(equalTo: typeLabel.centerYAnchor),
             timeLabel.leadingAnchor.constraint(equalTo: typeLabel.trailingAnchor, constant: 8),
-            
+            timeLabel.trailingAnchor.constraint(lessThanOrEqualTo: mockReceiveButton.leadingAnchor, constant: -8),
+
+            mockReceiveButton.centerYAnchor.constraint(equalTo: typeLabel.centerYAnchor),
+            mockReceiveButton.trailingAnchor.constraint(lessThanOrEqualTo: sizeLabel.leadingAnchor, constant: -8),
+            mockReceiveButton.heightAnchor.constraint(equalToConstant: 26),
+
             sizeLabel.centerYAnchor.constraint(equalTo: typeLabel.centerYAnchor),
             sizeLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            
+
             urlLabel.topAnchor.constraint(equalTo: typeLabel.bottomAnchor, constant: 6),
             urlLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             urlLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            
+
             dataLabel.topAnchor.constraint(equalTo: urlLabel.bottomAnchor, constant: 4),
             dataLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             dataLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             dataLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
         ])
     }
-    
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        message = nil
+        onMockReceive = nil
+        mockReceiveButton.isHidden = true
+    }
+
     func configure(with message: WebSocketMessage) {
+        self.message = message
         typeLabel.text = "\(message.type.emoji) \(message.type.rawValue)"
         timeLabel.text = message.timeString
         if let route = message.route {
@@ -86,7 +125,8 @@ class WebSocketMessageCell: UITableViewCell {
             urlLabel.text = message.host
         }
         sizeLabel.text = message.dataSize
-        
+        mockReceiveButton.isHidden = message.type != .receive
+
         switch message.type {
         case .connect:
             typeLabel.textColor = .systemGreen
@@ -114,5 +154,10 @@ class WebSocketMessageCell: UITableViewCell {
             dataLabel.textColor = .systemRed  // 错误信息也显示为红色
             dataLabel.text = message.dataString
         }
+    }
+
+    @objc private func mockReceiveTapped() {
+        guard let message = message else { return }
+        onMockReceive?(message)
     }
 }

@@ -2,6 +2,12 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.2.8] - 2026-06-09
+
+### Added
+- IM 接收消息 cell 新增“模拟接收”按钮
+- 新增 `setWebSocketMockReceiveHandler`，支持将历史接收消息重放到业务 IM 处理入口，用于验证 UI 渲染
+
 ## [1.2.7] - 2026-04-02
 
 ### Added

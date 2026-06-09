@@ -416,8 +416,16 @@ extension NetworkLogViewController: UITableViewDelegate, UITableViewDataSource {
             cell.configure(with: filteredRequests[indexPath.row])
             return cell
         } else {
+            let message = filteredWSMessages[indexPath.row]
             let cell = tableView.dequeueReusableCell(withIdentifier: "WebSocketMessageCell", for: indexPath) as! WebSocketMessageCell
-            cell.configure(with: filteredWSMessages[indexPath.row])
+            cell.configure(with: message)
+            cell.onMockReceive = { [weak self] message in
+                guard let self = self else { return }
+                let didTrigger = ZWBLogTap.shared.triggerWebSocketMockReceive(message)
+                if !didTrigger {
+                    self.showAlert(message: "未配置 IM 模拟接收处理入口")
+                }
+            }
             return cell
         }
     }

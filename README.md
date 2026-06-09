@@ -1,10 +1,10 @@
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.2.7-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.2.8-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.2.7-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.2.8-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -18,6 +18,7 @@
 - ✅ **环境切换** - 支持测试/正式环境快速切换，按钮颜色区分
 - ✅ **响应数据解密** - 支持 AES-128-CBC 解密，多环境配置
 - ✅ **URL 过滤** - 支持过滤指定 URL，不显示在日志列表
+- ✅ **IM 模拟接收** - 接收消息一键重放到业务处理入口，验证 UI 渲染
 - ✅ **模拟弱网** - 支持断网、限速、延迟等网络模拟
 - ✅ **Crash 监控** - 自动捕获并记录应用崩溃日志
 - ✅ **内存监控** - 实时监控内存使用情况
@@ -68,6 +69,7 @@
 - ✅ JSON 自动格式化
 - ✅ 消息大小实时显示
 - ✅ 完整的消息内容查看
+- ✅ 接收消息支持“模拟接收”重放，快速验证 IM UI 渲染
 - ✅ 支持复制和分享功能
 
 ### 调试工具
@@ -100,7 +102,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.2.7', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.2.8', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -403,11 +405,21 @@ ZWBLogTap.logWebSocketDisconnect(url: "wss://example.com", reason: "正常关闭
 ZWBLogTap.logWebSocketError(url: "wss://example.com", error: "连接超时")
 ```
 
+**IM 模拟接收：**
+
+如果你的 IM UI 渲染依赖业务接收处理链路，可以注册模拟接收回调。之后在 IM 列表的“接收”消息 cell 点击“模拟接收”，工具会把历史消息重新投递给你的业务处理入口。
+
+```swift
+ZWBLogTap.shared.setWebSocketMockReceiveHandler { message in
+    IMManager.shared.handleReceiveMessage(message.dataString)
+}
+```
+
 **查看日志：**
 1. 运行应用
 2. 点击右下角悬浮按钮 📊
 3. 切换到 "IM" 标签
-4. 查看所有 WebSocket 消息
+4. 查看所有 WebSocket 消息，或点击接收消息的“模拟接收”验证 UI 渲染
 
 **详细文档：**
 - 📖 [WebSocket 手动日志完整指南](WEBSOCKET_MANUAL_LOGGING.md)
@@ -477,7 +489,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.0.3', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.2.8', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -529,6 +541,12 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.2.8] - 2026-06-09
+
+#### Added
+- ✅ IM 接收消息 cell 新增“模拟接收”按钮
+- ✅ 新增 `setWebSocketMockReceiveHandler`，支持将历史接收消息重放到业务 IM 处理入口
 
 ### [1.2.7] - 2026-04-02
 
