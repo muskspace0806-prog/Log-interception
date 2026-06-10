@@ -326,13 +326,39 @@ class NetworkLogDetailViewController: UIViewController {
         var info = ""
         let params = request.decryptedQueryParameters
         if !params.isEmpty {
-            info += "URL参数 (\(params.count)):\n"
-            for (key, value) in params.sorted(by: { $0.key < $1.key }) { info += "\(key): \(value)\n" }
-            info += "\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            info += "📋 URL参数（解密后）共 \(params.count) 项\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            for (key, value) in params.sorted(by: { $0.key < $1.key }) {
+                info += "  \(key)\n    → \(value)\n\n"
+            }
         }
-        if let bodyString = request.requestBodyString {
-            if !info.isEmpty { info += "请求Body:\n" }
-            info += bodyString
+        if let body = request.body, !body.isEmpty {
+            let decryptedData = EnvironmentManager.shared.decryptResponseData(body)
+            if !info.isEmpty { info += "\n" }
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            info += "📦 请求 Body\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            if let json = try? JSONSerialization.jsonObject(with: decryptedData) {
+                if let dict = json as? [String: Any] {
+                    info += "  共 \(dict.count) 个字段:\n\n"
+                    for (key, value) in dict.sorted(by: { $0.key < $1.key }) {
+                        info += "  \(key)\n    → \(Self.formatBodyValue(value))\n\n"
+                    }
+                } else if let data = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+                          let str = String(data: data, encoding: .utf8) {
+                    info += str
+                }
+            } else if let rawString = String(data: decryptedData, encoding: .utf8) {
+                let formParams = Self.parseURLEncodedForm(rawString)
+                if !formParams.isEmpty {
+                    for (key, value) in formParams.sorted(by: { $0.key < $1.key }) {
+                        info += "  \(key)\n    → \(value)\n\n"
+                    }
+                } else {
+                    info += rawString
+                }
+            }
         } else if info.isEmpty {
             info = "无URL参数和请求Body"
         }
@@ -397,31 +423,104 @@ class NetworkLogDetailViewController: UIViewController {
         // 先显示URL参数（使用解密后的）
         let params = request.decryptedQueryParameters
         if !params.isEmpty {
-            info += "URL参数（解密后） (\(params.count)):\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            info += "📋 URL参数（解密后）共 \(params.count) 项\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             for (key, value) in params.sorted(by: { $0.key < $1.key }) {
-                info += "\(key): \(value)\n"
+                info += "  \(key)\n"
+                info += "    → \(value)\n\n"
             }
-            info += "\n"
         }
         
-        // 再显示请求Body（已经在 requestBodyString 中解密）
-        if let bodyString = request.requestBodyString {
+        // 再显示请求Body
+        if let body = request.body, !body.isEmpty {
+            // 解密
+            let decryptedData = EnvironmentManager.shared.decryptResponseData(body)
+            
             if !info.isEmpty {
-                info += "请求Body（解密后）:\n"
+                info += "\n"
             }
-            info += bodyString
-        } else if request.body != nil {
-            if !info.isEmpty {
-                info += "请求Body:\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            info += "📦 请求 Body\n"
+            info += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            
+            // 尝试解析为 JSON 字典 → key-value 列表展示
+            if let json = try? JSONSerialization.jsonObject(with: decryptedData) {
+                if let dict = json as? [String: Any] {
+                    info += "  共 \(dict.count) 个字段:\n\n"
+                    for (key, value) in dict.sorted(by: { $0.key < $1.key }) {
+                        let valueStr = Self.formatBodyValue(value)
+                        info += "  \(key)\n"
+                        info += "    → \(valueStr)\n\n"
+                    }
+                } else if let array = json as? [Any] {
+                    // JSON 数组，用 prettyPrinted 格式展示
+                    info += "  Array（\(array.count) 项）:\n\n"
+                    if let prettyData = try? JSONSerialization.data(withJSONObject: array, options: [.prettyPrinted, .sortedKeys]),
+                       let prettyStr = String(data: prettyData, encoding: .utf8) {
+                        info += prettyStr
+                    }
+                }
+            } else if let rawString = String(data: decryptedData, encoding: .utf8) {
+                // 尝试解析 URL-encoded form: key=value&key=value
+                let formParams = Self.parseURLEncodedForm(rawString)
+                if !formParams.isEmpty {
+                    info += "  共 \(formParams.count) 个字段（Form 表单）:\n\n"
+                    for (key, value) in formParams.sorted(by: { $0.key < $1.key }) {
+                        info += "  \(key)\n"
+                        info += "    → \(value)\n\n"
+                    }
+                } else {
+                    // 普通文本
+                    info += rawString
+                }
+            } else {
+                info += "  ⚠️ 无法解析为文本（二进制数据 \(decryptedData.count) 字节）"
             }
-            info += "无法解析请求Body（可能是二进制数据）"
-        } else {
-            if info.isEmpty {
-                info = "无URL参数和请求Body"
-            }
+        } else if info.isEmpty {
+            info = "无URL参数和请求Body"
         }
         
         textView.text = info
+    }
+    
+    /// 格式化 Body 中的值，嵌套对象/数组展开显示
+    private static func formatBodyValue(_ value: Any) -> String {
+        if let dict = value as? [String: Any] {
+            if let data = try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys]),
+               let str = String(data: data, encoding: .utf8) {
+                return str
+            }
+        }
+        if let array = value as? [Any] {
+            if let data = try? JSONSerialization.data(withJSONObject: array, options: [.prettyPrinted, .sortedKeys]),
+               let str = String(data: data, encoding: .utf8) {
+                return str
+            }
+        }
+        if value is NSNull {
+            return "null"
+        }
+        return "\(value)"
+    }
+    
+    /// 解析 URL-encoded form 数据 (key=value&key=value)
+    private static func parseURLEncodedForm(_ string: String) -> [String: String] {
+        // 简单判断是否是 form 格式
+        guard string.contains("=") && !string.contains("{") else { return [:] }
+        
+        var params: [String: String] = [:]
+        let pairs = string.components(separatedBy: "&")
+        for pair in pairs {
+            let parts = pair.components(separatedBy: "=")
+            if parts.count == 2 {
+                let key = parts[0].removingPercentEncoding ?? parts[0]
+                let value = parts[1].removingPercentEncoding ?? parts[1]
+                params[key] = value
+            }
+        }
+        // 至少要解析出2个参数才认为是 form 格式
+        return params.count >= 2 ? params : [:]
     }
     
     private func displayResponseHeaders() {

@@ -2,6 +2,14 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.2] - 2026-06-10
+
+### Improved
+- 优化请求 Body 展示格式：JSON 字典按 key-value 逐行展示，每个字段独立一行
+- 支持 URL-encoded form 表单格式自动解析为 key-value 列表
+- 增加分组标题和视觉分隔线，URL参数和请求Body分区显示
+- 嵌套对象/数组自动展开 JSON 格式化
+
 ## [1.3.1] - 2026-06-10
 
 ### Fixed
