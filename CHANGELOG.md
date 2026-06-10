@@ -2,6 +2,12 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.0] - 2026-06-10
+
+### Fixed
+- 修复 POST 请求 Body 无法获取的问题（URLProtocol 中 httpBody 为 nil 时，从 httpBodyStream 读取）
+- 修复响应 Body 展示不完整的问题（分片数据只保存了第一个 chunk，改为请求完成后保存完整响应）
+
 ## [1.2.9] - 2026-06-09
 
 ### Added

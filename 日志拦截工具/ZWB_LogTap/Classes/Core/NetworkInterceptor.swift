@@ -40,13 +40,16 @@ class NetworkInterceptor: URLProtocol {
         
         let startTime = Date()
         
+        // 获取请求 Body：优先使用 httpBody，否则尝试从 httpBodyStream 读取
+        let bodyData = request.httpBody ?? Self.readBodyStream(from: request)
+        
         // 记录请求信息
         let interceptedRequest = InterceptedRequest(
             id: UUID().uuidString,
             url: request.url?.absoluteString ?? "",
             method: request.httpMethod ?? "GET",
             headers: request.allHTTPHeaderFields ?? [:],
-            body: request.httpBody,
+            body: bodyData,
             startTime: startTime
         )
         
@@ -67,6 +70,36 @@ class NetworkInterceptor: URLProtocol {
     override func stopLoading() {
         sessionTask?.cancel()
         session?.invalidateAndCancel()
+    }
+    
+    // MARK: - 从 httpBodyStream 读取 Body 数据
+    // URLProtocol 中 httpBody 经常为 nil（iOS 系统会将 body 转为 stream），
+    // 需要手动从 httpBodyStream 读取
+    private static func readBodyStream(from request: URLRequest) -> Data? {
+        guard let stream = request.httpBodyStream else { return nil }
+        
+        stream.open()
+        defer { stream.close() }
+        
+        let bufferSize = 4096
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+        
+        var data = Data()
+        
+        while stream.hasBytesAvailable {
+            let bytesRead = stream.read(buffer, maxLength: bufferSize)
+            if bytesRead > 0 {
+                data.append(buffer, count: bytesRead)
+            } else if bytesRead < 0 {
+                // 读取错误
+                return nil
+            } else {
+                break
+            }
+        }
+        
+        return data.isEmpty ? nil : data
     }
 }
 
@@ -96,17 +129,6 @@ extension NetworkInterceptor: URLSessionDataDelegate {
             responseData = Data()
         }
         responseData?.append(data)
-        
-        // 保存响应数据
-        if let url = dataTask.originalRequest?.url?.absoluteString {
-            DispatchQueue.main.async {
-                if let index = NetworkInterceptor.interceptedRequests.firstIndex(where: { $0.url == url && $0.responseData == nil }) {
-                    NetworkInterceptor.interceptedRequests[index].responseData = self.responseData
-                    NetworkInterceptor.interceptedRequests[index].endTime = Date()
-                    NotificationCenter.default.post(name: .networkRequestIntercepted, object: nil)
-                }
-            }
-        }
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -119,12 +141,24 @@ extension NetworkInterceptor: URLSessionDataDelegate {
                     if let index = NetworkInterceptor.interceptedRequests.firstIndex(where: { $0.url == url && $0.endTime == nil }) {
                         NetworkInterceptor.interceptedRequests[index].error = error.localizedDescription
                         NetworkInterceptor.interceptedRequests[index].endTime = Date()
+                        NetworkInterceptor.interceptedRequests[index].responseData = self.responseData
                         NotificationCenter.default.post(name: .networkRequestIntercepted, object: nil)
                     }
                 }
             }
         } else {
             client?.urlProtocolDidFinishLoading(self)
+            
+            // 请求完成时，保存完整的响应数据
+            if let url = task.originalRequest?.url?.absoluteString {
+                DispatchQueue.main.async {
+                    if let index = NetworkInterceptor.interceptedRequests.firstIndex(where: { $0.url == url && $0.endTime == nil }) {
+                        NetworkInterceptor.interceptedRequests[index].responseData = self.responseData
+                        NetworkInterceptor.interceptedRequests[index].endTime = Date()
+                        NotificationCenter.default.post(name: .networkRequestIntercepted, object: nil)
+                    }
+                }
+            }
         }
     }
 }
