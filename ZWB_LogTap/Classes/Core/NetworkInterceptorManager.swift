@@ -25,11 +25,14 @@ class NetworkInterceptorManager {
         // Hook URLSessionConfiguration，支持自定义 session（包括 Alamofire）
         swizzleURLSessionConfiguration()
         
+        // Hook URLSession 的 task 创建方法，缓存请求 Body
+        swizzleURLSessionTaskCreation()
+        
         // Hook Alamofire（如果存在）
         hookAlamofire()
         
         isIntercepting = true
-        print("✅ 网络拦截已启动（URLProtocol + Swizzling + Alamofire）")
+        print("✅ 网络拦截已启动（URLProtocol + Swizzling + Body缓存 + Alamofire）")
     }
     
     // Hook Alamofire 的 SessionManager
@@ -58,6 +61,32 @@ class NetworkInterceptorManager {
         )
         
         print("✅ URLSessionConfiguration Hook 成功")
+    }
+    
+    // Hook URLSession 的 dataTask/uploadTask 创建方法，在请求发出前缓存 Body
+    private func swizzleURLSessionTaskCreation() {
+        // Hook dataTask(with request:)
+        let cls: AnyClass = URLSession.self
+        
+        // 1. Hook dataTask(with:completionHandler:) - URLRequest 版本
+        if let original = class_getInstanceMethod(cls, #selector(URLSession.dataTask(with:completionHandler:) as (URLSession) -> (URLRequest, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask)),
+           let swizzled = class_getInstanceMethod(cls, #selector(URLSession.lt_dataTask(with:completionHandler:))) {
+            method_exchangeImplementations(original, swizzled)
+        }
+        
+        // 2. Hook uploadTask(with:from:completionHandler:)
+        if let original = class_getInstanceMethod(cls, #selector(URLSession.uploadTask(with:from:completionHandler:))),
+           let swizzled = class_getInstanceMethod(cls, #selector(URLSession.lt_uploadTask(with:from:completionHandler:))) {
+            method_exchangeImplementations(original, swizzled)
+        }
+        
+        // 3. Hook dataTask(with:) 无 completionHandler 版本
+        if let original = class_getInstanceMethod(cls, #selector(URLSession.dataTask(with:) as (URLSession) -> (URLRequest) -> URLSessionDataTask)),
+           let swizzled = class_getInstanceMethod(cls, #selector(URLSession.lt_dataTask(with:))) {
+            method_exchangeImplementations(original, swizzled)
+        }
+        
+        print("✅ URLSession Task 创建方法 Hook 成功（Body缓存）")
     }
     
     // 通用的 Method Swizzling 方法
@@ -220,5 +249,46 @@ extension URLSessionConfiguration {
                 self.swizzled_protocolClasses = [NetworkInterceptor.self]
             }
         }
+    }
+}
+
+// MARK: - URLSession Body 缓存 Swizzling
+// 核心思路：在 URLSession 创建 task 时，把 httpBody 写入 request 的自定义属性
+// 这样 URLProtocol 中就能通过 URLProtocol.property(forKey:in:) 取到 body
+extension URLSession {
+    
+    private static let bodyPropertyKey = "NetworkInterceptorCachedBody"
+    
+    /// 将 body 缓存到 request 的自定义属性中
+    private static func cacheBody(for request: URLRequest) -> URLRequest {
+        guard let body = request.httpBody, !body.isEmpty else { return request }
+        guard let mutable = (request as NSURLRequest).mutableCopy() as? NSMutableURLRequest else { return request }
+        URLProtocol.setProperty(body, forKey: bodyPropertyKey, in: mutable)
+        return mutable as URLRequest
+    }
+    
+    /// 将 body data 缓存到 request 的自定义属性中
+    private static func cacheBody(_ bodyData: Data?, for request: URLRequest) -> URLRequest {
+        guard let body = bodyData, !body.isEmpty else { return cacheBody(for: request) }
+        guard let mutable = (request as NSURLRequest).mutableCopy() as? NSMutableURLRequest else { return request }
+        URLProtocol.setProperty(body, forKey: bodyPropertyKey, in: mutable)
+        return mutable as URLRequest
+    }
+    
+    // MARK: - Swizzled Methods
+    
+    @objc func lt_dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
+        let cachedRequest = URLSession.cacheBody(for: request)
+        return lt_dataTask(with: cachedRequest, completionHandler: completionHandler)
+    }
+    
+    @objc func lt_dataTask(with request: URLRequest) -> URLSessionDataTask {
+        let cachedRequest = URLSession.cacheBody(for: request)
+        return lt_dataTask(with: cachedRequest)
+    }
+    
+    @objc func lt_uploadTask(with request: URLRequest, from bodyData: Data?, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionUploadTask {
+        let cachedRequest = URLSession.cacheBody(bodyData, for: request)
+        return lt_uploadTask(with: cachedRequest, from: bodyData, completionHandler: completionHandler)
     }
 }

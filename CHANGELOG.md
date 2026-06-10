@@ -2,6 +2,11 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.1] - 2026-06-10
+
+### Fixed
+- 彻底修复 POST 请求 Body 无法获取的问题：通过 swizzle URLSession 的 dataTask/uploadTask 创建方法，在请求发出前将 body 缓存到 request 自定义属性中，URLProtocol 优先从缓存属性读取 body
+
 ## [1.3.0] - 2026-06-10
 
 ### Fixed

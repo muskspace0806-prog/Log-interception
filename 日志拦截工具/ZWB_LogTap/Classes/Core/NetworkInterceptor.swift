@@ -40,8 +40,22 @@ class NetworkInterceptor: URLProtocol {
         
         let startTime = Date()
         
-        // 获取请求 Body：优先使用 httpBody，否则尝试从 httpBodyStream 读取
-        let bodyData = request.httpBody ?? Self.readBodyStream(from: request)
+        // 获取请求 Body（优先级）：
+        // 1. 从 swizzle 缓存的自定义属性中读取（最可靠）
+        // 2. 从 httpBody 读取
+        // 3. 从 httpBodyStream 读取
+        let bodyData: Data? = {
+            // 优先从缓存属性中取（swizzle URLSession task 创建时写入的）
+            if let cached = URLProtocol.property(forKey: "NetworkInterceptorCachedBody", in: request) as? Data {
+                return cached
+            }
+            // 尝试 httpBody
+            if let body = request.httpBody, !body.isEmpty {
+                return body
+            }
+            // 最后尝试从 httpBodyStream 读取
+            return Self.readBodyStream(from: request)
+        }()
         
         // 记录请求信息
         let interceptedRequest = InterceptedRequest(
