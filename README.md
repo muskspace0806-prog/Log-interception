@@ -1,3 +1,7 @@
+<h3 align="left">
+  <strong>中文</strong> | <a href="./README.en.md">English</a>
+</h3>
+
 # ZWB_LogTap
 
 [![Version](https://img.shields.io/badge/version-1.2.9-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
@@ -7,8 +11,6 @@
 [![CocoaPods](https://img.shields.io/badge/pod-1.2.9-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
-
-[English](README_EN.md) | 中文文档
 
 ## ✨ 功能特性
 
