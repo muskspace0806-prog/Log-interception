@@ -757,6 +757,33 @@ override class func canInit(with request: URLRequest) -> Bool {
 
 ## 📝 更新日志
 
+### [1.3.3] - 2026-06-10
+
+#### Added
+- ✅ 新增 `ZWBLogTapOCBridge.swift`，通过 `ZWBLogTapOC` 类完整支持 Objective-C 项目
+- ✅ 新增 OC 可用类型：`ZWBConfiguration`、`ZWBDecryptionConfig`、`ZWBEnvironmentType`、`ZWBFloatingButtonPosition`
+- ✅ 新增 `Package.swift`，支持 Swift Package Manager 集成
+- ✅ README 新增完整的 Objective-C 使用说明章节
+
+### [1.3.2] - 2026-06-10
+
+#### Improved
+- ✅ 优化请求 Body 展示格式：JSON 字典按 key-value 逐行展示，每个字段独立一行
+- ✅ 支持 URL-encoded form 表单格式自动解析为 key-value 列表
+- ✅ 增加分组标题和视觉分隔线，URL参数和请求Body分区显示
+- ✅ 嵌套对象/数组自动展开 JSON 格式化
+
+### [1.3.1] - 2026-06-10
+
+#### Fixed
+- ✅ 彻底修复 POST 请求 Body 无法获取的问题：通过 swizzle URLSession 的 dataTask/uploadTask 创建方法，在请求发出前将 body 缓存到 request 自定义属性中
+
+### [1.3.0] - 2026-06-10
+
+#### Fixed
+- ✅ 修复 POST 请求 Body 无法获取的问题（URLProtocol 中 httpBody 为 nil 时，从 httpBodyStream 读取）
+- ✅ 修复响应 Body 展示不完整的问题（分片数据只保存了第一个 chunk，改为请求完成后保存完整响应）
+
 ### [1.2.9] - 2026-06-09
 
 #### Added
