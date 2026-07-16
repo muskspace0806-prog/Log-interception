@@ -2,6 +2,14 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.3] - 2026-06-10
+
+### Added
+- 新增 `ZWBLogTapOCBridge.swift`，通过 `ZWBLogTapOC` 类完整支持 Objective-C 项目使用所有功能
+- 新增 OC 可用类型：`ZWBConfiguration`、`ZWBDecryptionConfig`、`ZWBEnvironmentType`、`ZWBFloatingButtonPosition`
+- 新增 Package.swift，支持 Swift Package Manager 集成
+- README 新增完整的 Objective-C 使用说明章节
+
 ## [1.3.2] - 2026-06-10
 
 ### Improved

@@ -4,11 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.2.9-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.2-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
+[![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.2.9-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.2-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -106,7 +107,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.2.9', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.2', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -482,6 +483,213 @@ ZWBLogTap.shared.stop()
 - ✅ SocketRocket
 - ⚠️ URLSessionWebSocketTask (需要额外配置)
 - ✅ 其他基于 NSStream 的实现
+
+## 🔷 Objective-C 完整使用指南
+
+ZWB_LogTap 从 **1.3.3** 起通过 `ZWBLogTapOC` 桥接类，让纯 OC 项目或混编项目可以完整使用所有功能。
+
+> **前提**：OC 项目需支持混编（Xcode 默认支持，无需额外配置）。
+
+### 安装（Podfile）
+
+```ruby
+pod 'ZWB_LogTap', '~> 1.3.3', :configurations => ['Debug']
+```
+
+### 基础启动
+
+在 `AppDelegate.m` 中：
+
+```objc
+#import "AppDelegate.h"
+@import ZWB_LogTap;   // 或 #import <ZWB_LogTap/ZWB_LogTap-Swift.h>
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+
+    // 方式 1：一行启动，仅 Debug 生效（推荐）
+    [ZWBLogTapOC startIfDebug];
+
+    // 方式 2：手动启动
+    #ifdef DEBUG
+    [ZWBLogTapOC start];
+    #endif
+
+    return YES;
+}
+
+@end
+```
+
+### 自定义配置启动
+
+```objc
+#ifdef DEBUG
+ZWBConfiguration *config = [[ZWBConfiguration alloc] init];
+config.showFloatingButton   = YES;
+config.interceptHTTP        = YES;
+config.maxRecords           = 1000;
+config.floatingButtonPosition = ZWBFloatingButtonPositionBottomRight;
+config.defaultEnvironment   = ZWBEnvironmentTypeTest;
+
+[ZWBLogTapOC startWith:config];
+#endif
+```
+
+### 环境切换 + 响应解密
+
+```objc
+#ifdef DEBUG
+// 测试环境解密配置
+ZWBDecryptionConfig *testDecrypt = [[ZWBDecryptionConfig alloc]
+    initWithAesKey:@"test_aes_key_16b"
+             aesIV:@"test_aes_iv__16b"];
+
+// 正式环境解密配置
+ZWBDecryptionConfig *prodDecrypt = [[ZWBDecryptionConfig alloc]
+    initWithAesKey:@"prod_aes_key_16b"
+             aesIV:@"prod_aes_iv__16b"
+ encryptedFieldName:@"ed"
+            enabled:YES];
+
+ZWBConfiguration *config = [[ZWBConfiguration alloc] init];
+config.defaultEnvironment       = ZWBEnvironmentTypeTest;
+config.testDecryptionConfig     = testDecrypt;
+config.productionDecryptionConfig = prodDecrypt;
+
+[ZWBLogTapOC startWith:config];
+#endif
+```
+
+### 环境切换回调
+
+```objc
+// 切换时回调，参数为新环境名称字符串
+[ZWBLogTapOC setEnvironmentSwitchCallback:^(NSString *environmentName) {
+    NSLog(@"切换到环境: %@", environmentName);
+
+    if ([environmentName isEqualToString:@"测试环境"]) {
+        [APIManager shared].baseURL = @"https://test-api.example.com";
+    } else {
+        [APIManager shared].baseURL = @"https://api.example.com";
+    }
+}];
+
+// 主动切换到正式环境
+[ZWBLogTapOC switchToEnvironment:ZWBEnvironmentTypeProduction customName:@""];
+
+// 在测试/正式间来回切换
+[ZWBLogTapOC switchEnvironment];
+
+// 查询当前环境
+NSString *envName = [ZWBLogTapOC currentEnvironmentName];
+```
+
+### WebSocket 手动日志
+
+```objc
+// 连接
+[ZWBLogTapOC logWebSocketConnectWithUrl:@"wss://example.com/ws"];
+
+// 发送（文本）
+[ZWBLogTapOC logWebSocketSendWithUrl:@"wss://example.com/ws"
+                              message:@"{\"action\":\"ping\"}"];
+
+// 发送（二进制）
+[ZWBLogTapOC logWebSocketSendDataWithUrl:@"wss://example.com/ws"
+                                    data:binaryData];
+
+// 接收（文本）
+[ZWBLogTapOC logWebSocketReceiveWithUrl:@"wss://example.com/ws"
+                                 message:receivedText];
+
+// 接收（二进制）
+[ZWBLogTapOC logWebSocketReceiveDataWithUrl:@"wss://example.com/ws"
+                                       data:receivedData];
+
+// 断开（含原因）
+[ZWBLogTapOC logWebSocketDisconnectWithUrl:@"wss://example.com/ws"
+                                    reason:@"正常关闭"];
+
+// 错误
+[ZWBLogTapOC logWebSocketErrorWithUrl:@"wss://example.com/ws"
+                                error:@"连接超时"];
+```
+
+### 在 SocketRocket delegate 中使用（OC）
+
+```objc
+#import <SocketRocket/SRWebSocket.h>
+@import ZWB_LogTap;
+
+@interface MyWebSocketManager () <SRWebSocketDelegate>
+@property (nonatomic, strong) SRWebSocket *socket;
+@end
+
+@implementation MyWebSocketManager
+
+- (void)connect {
+    NSURL *url = [NSURL URLWithString:@"wss://example.com/ws"];
+    self.socket = [[SRWebSocket alloc] initWithURL:url];
+    self.socket.delegate = self;
+    [self.socket open];
+
+    [ZWBLogTapOC logWebSocketConnectWithUrl:url.absoluteString];
+}
+
+- (void)webSocket:(SRWebSocket *)webSocket didReceiveMessage:(id)message {
+    // 记录接收（只需一行）
+    [ZWBLogTapOC logWebSocketReceiveWithUrl:webSocket.url.absoluteString
+                                    message:[message description]];
+    // 业务逻辑...
+}
+
+- (void)webSocket:(SRWebSocket *)webSocket didFailWithError:(NSError *)error {
+    [ZWBLogTapOC logWebSocketErrorWithUrl:webSocket.url.absoluteString
+                                    error:error.localizedDescription];
+}
+
+- (void)webSocket:(SRWebSocket *)webSocket
+    didCloseWithCode:(NSInteger)code reason:(NSString *)reason wasClean:(BOOL)wasClean {
+    [ZWBLogTapOC logWebSocketDisconnectWithUrl:webSocket.url.absoluteString
+                                        reason:reason ?: @""];
+}
+
+@end
+```
+
+### 其他常用 API
+
+```objc
+// 显示日志面板
+[ZWBLogTapOC showLogViewController];
+
+// 清空所有日志
+[ZWBLogTapOC clearAllLogs];
+
+// 导出日志为 JSON 字符串
+NSString *json = [ZWBLogTapOC exportLogsAsJSON];
+
+// 停止
+[ZWBLogTapOC stop];
+
+// 判断是否已启动
+BOOL running = [ZWBLogTapOC isEnabled];
+```
+
+### OC 可用类型速查
+
+| Swift 类型 | OC 对应类型 | 说明 |
+|---|---|---|
+| `ZWBLogTap.Configuration` | `ZWBConfiguration` | 启动配置 |
+| `ZWBLogTap.ResponseDecryptionConfig` | `ZWBDecryptionConfig` | AES 解密配置 |
+| `ZWBLogTap.FloatingButtonPosition` | `ZWBFloatingButtonPosition` | 悬浮按钮位置枚举 |
+| `EnvironmentManager.Environment` | `ZWBEnvironmentType` | 环境类型枚举 |
+| `ZWBLogTap.shared.start(...)` | `[ZWBLogTapOC startWith:]` | 启动入口 |
+
+---
 
 ## 💡 最佳实践
 
