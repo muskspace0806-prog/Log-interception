@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.3-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.4-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.3-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.4-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, environment switching, response decryption, IM message replay, weak-network simulation, crash logs, memory monitoring, and floating debug access.
 
@@ -25,7 +25,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 - Crash log capture and memory monitoring.
 - Failed request highlighting.
 - JSON formatting, search, filtering, export, copy, and share.
-- Draggable floating button.
+- Draggable floating button with automatic recovery after host window changes.
 - Debug-only integration with one-line startup.
 
 > WebSocket interception is currently disabled due to technical limitations. Use specialized WebSocket tools when needed.
@@ -35,7 +35,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 ### CocoaPods
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.3', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
 ```
 
 ### Swift Package Manager
@@ -50,7 +50,7 @@ Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.3")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.4")
 ]
 ```
 
@@ -69,7 +69,7 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 }
 ```
 
-After launch, a floating debug button appears in the bottom-right corner.
+After launch, a floating debug button appears in the bottom-right corner and automatically reattaches if the host app rebuilds or switches its active window.
 
 ## Configuration
 
@@ -112,7 +112,7 @@ Since **v1.3.3**, ZWB_LogTap fully supports Objective-C projects through the `ZW
 ### Installation (Podfile)
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.3', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
 ```
 
 ### Basic Usage
@@ -308,6 +308,15 @@ BOOL running = [ZWBLogTapOC isEnabled];
 | `ZWBLogTap.shared.start(...)` | `[ZWBLogTapOC startWith:]` | Start entry point |
 
 ---
+
+## Changelog
+
+### [1.3.4] - 2026-07-22
+
+#### Fixed
+- Fixed floating debug entry disappearing in some host apps after the home page or key window changes.
+- Added automatic recovery for the main debug floating button and the IM mock-receive floating entry.
+- Kept HTTP interception starting immediately, so startup requests are still captured without delaying SDK initialization.
 
 ## Notes
 

@@ -2,6 +2,13 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.4] - 2026-07-22
+
+### Fixed
+- 修复部分宿主项目首页入口显示几秒后消失的问题：悬浮入口会监听 App/Scene/Window 生命周期，并在当前有效 keyWindow 上自动恢复
+- IM 模拟接收悬浮入口同步支持 Window 切换后的自动迁移
+- 保持 HTTP 拦截在启动时立即生效，不需要通过延迟初始化牺牲启动期请求抓取
+
 ## [1.3.3] - 2026-06-10
 
 ### Added

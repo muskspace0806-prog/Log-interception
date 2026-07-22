@@ -103,7 +103,12 @@ final class MockReceiveFloatingButton: UIButton {
     }
     
     func show(in view: UIView) {
-        if superview != nil { return }
+        if superview === view {
+            view.bringSubviewToFront(self)
+            return
+        }
+
+        removeFromSuperview()
         view.addSubview(self)
         
         let margin: CGFloat = 20

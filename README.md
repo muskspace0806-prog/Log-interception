@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.2-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.4-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.2-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.4-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -30,7 +30,7 @@
 - ✅ **JSON 格式化** - 自动格式化 JSON 数据，易于阅读
 - ✅ **搜索过滤** - 快速搜索和过滤网络请求
 - ✅ **日志导出** - 支持导出日志为 JSON 格式
-- ✅ **悬浮按钮** - 可拖拽的悬浮按钮，随时查看日志
+- ✅ **悬浮按钮** - 可拖拽的悬浮按钮，随时查看日志，支持宿主 Window 切换后自动恢复
 - ✅ **零配置** - 一行代码即可启动
 - ✅ **仅 Debug** - 只在开发环境使用，不影响生产环境
 
@@ -93,7 +93,7 @@
 - ✅ 悬浮窗：实时显示监控数据
 
 ### 界面特性
-- ✅ 悬浮按钮，可拖拽移动，颜色区分环境
+- ✅ 悬浮按钮，可拖拽移动，颜色区分环境，宿主首页重建或 Window 切换后自动恢复
 - ✅ HTTP/IM 模式快速切换
 - ✅ 搜索和过滤功能
 - ✅ 一键清空和导出日志
@@ -107,7 +107,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.3.2', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -120,7 +120,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.2.0")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.4")
 ]
 ```
 
@@ -493,7 +493,7 @@ ZWB_LogTap 从 **1.3.3** 起通过 `ZWBLogTapOC` 桥接类，让纯 OC 项目或
 ### 安装（Podfile）
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.3', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
 ```
 
 ### 基础启动
@@ -704,7 +704,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.2.9', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -756,6 +756,13 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.3.4] - 2026-07-22
+
+#### Fixed
+- ✅ 修复部分宿主项目首页入口显示几秒后消失的问题：悬浮入口会监听 App/Scene/Window 生命周期，并在当前有效 keyWindow 上自动恢复
+- ✅ IM 模拟接收悬浮入口同步支持 Window 切换后的自动迁移
+- ✅ 保持 HTTP 拦截在启动时立即生效，不需要通过延迟初始化牺牲启动期请求抓取
 
 ### [1.3.3] - 2026-06-10
 

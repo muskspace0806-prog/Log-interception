@@ -19,6 +19,10 @@ public class ZWBLogTap {
     private var floatingButton: FloatingButton?
     private var mockReceiveFloatingButton: MockReceiveFloatingButton?
     private var mockReceiveSelectionObserver: NSObjectProtocol?
+    private var floatingButtonObservers: [NSObjectProtocol] = []
+    private var floatingButtonRepairTimer: Timer?
+    private var shouldShowFloatingButton = false
+    private var currentFloatingButtonPosition: FloatingButtonPosition = .bottomRight
 
     /// 当前显示的日志页面
     private weak var currentLogViewController: NetworkLogViewController?
@@ -99,11 +103,22 @@ public class ZWBLogTap {
         }
 
         guard !isEnabled else {
+            shouldShowFloatingButton = configuration.showFloatingButton
+            currentFloatingButtonPosition = configuration.floatingButtonPosition
+            if configuration.showFloatingButton {
+                startFloatingButtonRepairMonitor()
+                scheduleFloatingButtonRepair(after: 0)
+            } else {
+                hideFloatingButton()
+                stopFloatingButtonRepairMonitor()
+            }
             print("⚠️ ZWB_LogTap 已经启动，当前环境: \(EnvironmentManager.shared.currentEnvironment.name)")
             return
         }
 
         isEnabled = true
+        shouldShowFloatingButton = configuration.showFloatingButton
+        currentFloatingButtonPosition = configuration.floatingButtonPosition
 
         // 只在没有持久化记录时才使用 defaultEnvironment，否则恢复上次的环境
         if !EnvironmentManager.shared.hasPersisted {
@@ -129,10 +144,8 @@ public class ZWBLogTap {
 
         // 显示悬浮按钮
         if configuration.showFloatingButton {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.showFloatingButton(at: configuration.floatingButtonPosition)
-                self.updateMockReceiveFloatingButtonVisibility()
-            }
+            startFloatingButtonRepairMonitor()
+            scheduleFloatingButtonRepair(after: 0.5)
         }
         
         mockReceiveSelectionObserver = NotificationCenter.default.addObserver(
@@ -149,6 +162,8 @@ public class ZWBLogTap {
         guard isEnabled else { return }
 
         isEnabled = false
+        shouldShowFloatingButton = false
+        stopFloatingButtonRepairMonitor()
         hideFloatingButton()
         hideMockReceiveFloatingButton()
         if let observer = mockReceiveSelectionObserver {
@@ -323,7 +338,7 @@ public class ZWBLogTap {
     // MARK: - Private Methods
 
     private func showFloatingButton(at position: FloatingButtonPosition) {
-        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+        guard let window = currentKeyWindow() else {
             return
         }
 
@@ -337,6 +352,80 @@ public class ZWBLogTap {
         floatingButton?.show(in: window)
     }
 
+    private func startFloatingButtonRepairMonitor() {
+        guard floatingButtonRepairTimer == nil else { return }
+
+        let notificationCenter = NotificationCenter.default
+        let names: [Notification.Name] = [
+            UIApplication.didBecomeActiveNotification,
+            UIWindow.didBecomeKeyNotification,
+            UIWindow.didBecomeVisibleNotification
+        ]
+
+        floatingButtonObservers = names.map { name in
+            notificationCenter.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.scheduleFloatingButtonRepair(after: 0.1)
+            }
+        }
+
+        if #available(iOS 13.0, *) {
+            let observer = notificationCenter.addObserver(
+                forName: UIScene.didActivateNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.scheduleFloatingButtonRepair(after: 0.1)
+            }
+            floatingButtonObservers.append(observer)
+        }
+
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.ensureFloatingButtonVisible()
+        }
+        floatingButtonRepairTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func stopFloatingButtonRepairMonitor() {
+        floatingButtonRepairTimer?.invalidate()
+        floatingButtonRepairTimer = nil
+
+        floatingButtonObservers.forEach {
+            NotificationCenter.default.removeObserver($0)
+        }
+        floatingButtonObservers.removeAll()
+    }
+
+    private func scheduleFloatingButtonRepair(after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            self?.ensureFloatingButtonVisible()
+        }
+    }
+
+    private func ensureFloatingButtonVisible() {
+        guard isEnabled, shouldShowFloatingButton else { return }
+        showFloatingButton(at: currentFloatingButtonPosition)
+        updateMockReceiveFloatingButtonVisibility()
+    }
+
+    private func currentKeyWindow() -> UIWindow? {
+        if #available(iOS 13.0, *) {
+            return UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .filter { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow && !$0.isHidden && $0.alpha > 0 && $0.rootViewController != nil }
+        }
+
+        return UIApplication.shared.windows.first {
+            $0.isKeyWindow && !$0.isHidden && $0.alpha > 0 && $0.rootViewController != nil
+        }
+    }
+
     private func hideFloatingButton() {
         floatingButton?.hide()
         floatingButton = nil
@@ -346,7 +435,7 @@ public class ZWBLogTap {
         DispatchQueue.main.async {
             guard self.isEnabled,
                   WebSocketMockReceiveStore.shared.selectedMessage != nil,
-                  let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+                  let window = self.currentKeyWindow() else {
                 self.hideMockReceiveFloatingButton()
                 return
             }
