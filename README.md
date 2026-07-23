@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.4-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.5-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.4-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.5-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -25,6 +25,8 @@
 - ✅ **模拟弱网** - 支持断网、限速、延迟等网络模拟
 - ✅ **Crash 监控** - 自动捕获并记录应用崩溃日志
 - ✅ **内存监控** - 实时监控内存使用情况
+- ✅ **性能悬浮窗** - 实时展示 FPS、CPU(App)、内存、网络、流量、UI 卡顿(JANK)、主线程阻塞(STALL)、电量和热状态
+- ✅ **性能详细记录** - 支持 latest-first 性能日志、复制、清空和异步分享 txt
 - ✅ **失败请求高亮** - 错误请求 URL 自动标红，一目了然
 - ✅ **实时查看** - 实时显示请求和响应数据
 - ✅ **JSON 格式化** - 自动格式化 JSON 数据，易于阅读
@@ -88,6 +90,9 @@
 **特性：**
 - ✅ 模拟弱网：断网、限速、延迟
 - ✅ 内存监控：实时显示内存使用
+- ✅ 性能悬浮窗：FPS、CPU(App)、内存、网络、JANK、STALL、电量、热状态实时展示
+- ✅ 性能记录：子线程写入本地 txt，详细记录页支持最新记录置顶、复制、清空和分享
+- ✅ 卡顿定位：JANK 记录掉帧信息，STALL 记录主线程阻塞时的调用栈，便于定位业务卡顿路径
 - ✅ Crash 日志：自动捕获崩溃
 - ✅ 环境切换：测试/正式环境快速切换
 - ✅ 悬浮窗：实时显示监控数据
@@ -107,7 +112,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.5', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -120,7 +125,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.4")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.5")
 ]
 ```
 
@@ -493,7 +498,7 @@ ZWB_LogTap 从 **1.3.3** 起通过 `ZWBLogTapOC` 桥接类，让纯 OC 项目或
 ### 安装（Podfile）
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.5', :configurations => ['Debug']
 ```
 
 ### 基础启动
@@ -704,7 +709,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.4', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.5', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -756,6 +761,18 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.3.5] - 2026-07-23
+
+#### Added
+- ✅ 新增性能悬浮窗：实时展示 FPS、CPU(App)、内存、网络请求、流量、UI 卡顿(JANK)、主线程阻塞(STALL)、电量和热状态
+- ✅ 新增绿色 `PERF` 悬浮入口：开启性能记录后默认展示面板，可点击入口隐藏/展示
+- ✅ 新增性能详细记录页：支持 latest-first 性能日志、复制、清空和分享 txt
+- ✅ STALL 事件支持记录阻塞时主线程调用栈，方便定位业务卡顿路径
+
+#### Improved
+- ✅ 性能 txt 分享改为后台生成，减少首次分享/隔空投送时的主线程等待
+- ✅ ZWB_LogTap 自身的打开、关闭、复制、分享、清空等操作会进入内部操作排除窗口，减少误计入 JANK/STALL
 
 ### [1.3.4] - 2026-07-22
 

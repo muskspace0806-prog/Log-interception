@@ -17,6 +17,7 @@ class DebugToolsViewController: UIViewController {
             ToolItem(title: "环境切换", icon: "🌍", subtitle: "切换测试/正式环境")
         ]),
         Section(title: "性能检测", items: [
+            ToolItem(title: "性能悬浮窗", icon: "⚡️", subtitle: "FPS、CPU、内存、网络、JANK、阻塞、电量"),
             ToolItem(title: "模拟弱网", icon: "🌐", subtitle: "断网、限速、延迟等"),
             ToolItem(title: "Crash 日志", icon: "💥", subtitle: "查看应用崩溃记录"),
             ToolItem(title: "内存监控", icon: "💾", subtitle: "实时监控内存使用")
@@ -42,6 +43,11 @@ class DebugToolsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView?.reloadData()
     }
     
     private func setupUI() {
@@ -133,7 +139,16 @@ extension DebugToolsViewController: UITableViewDelegate, UITableViewDataSource {
             cell.detailTextLabel?.text = item.subtitle
         }
         
-        cell.accessoryType = .disclosureIndicator
+        if item.title == "性能悬浮窗" {
+            let enableSwitch = UISwitch()
+            enableSwitch.isOn = ZWBLogTap.shared.isPerformanceMonitorEnabled
+            enableSwitch.addTarget(self, action: #selector(performanceSwitchChanged(_:)), for: .valueChanged)
+            cell.accessoryView = enableSwitch
+            cell.accessoryType = .none
+        } else {
+            cell.accessoryView = nil
+            cell.accessoryType = .disclosureIndicator
+        }
         
         return cell
     }
@@ -146,6 +161,9 @@ extension DebugToolsViewController: UITableViewDelegate, UITableViewDataSource {
         switch item.title {
         case "环境切换":
             showEnvironmentSwitchAlert()
+        case "性能悬浮窗":
+            let vc = PerformanceLogViewController()
+            present(vc, animated: true)
         case "模拟弱网":
             let vc = NetworkSimulatorViewController()
             present(vc, animated: true)
@@ -166,6 +184,11 @@ extension DebugToolsViewController: UITableViewDelegate, UITableViewDataSource {
         default:
             break
         }
+    }
+    
+
+    @objc private func performanceSwitchChanged(_ sender: UISwitch) {
+        ZWBLogTap.shared.setPerformanceMonitorEnabled(sender.isOn)
     }
     
     // 显示环境切换弹窗

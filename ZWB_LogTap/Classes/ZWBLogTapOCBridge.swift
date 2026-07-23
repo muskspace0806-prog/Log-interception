@@ -164,6 +164,21 @@ import UIKit
         ZWBLogTap.shared.showLogViewController()
     }
 
+    /// 显示性能悬浮窗
+    @objc public static func showPerformanceFloatingWindow() {
+        ZWBLogTap.shared.showPerformanceFloatingWindow()
+    }
+
+    /// 隐藏性能悬浮窗
+    @objc public static func hidePerformanceFloatingWindow() {
+        ZWBLogTap.shared.hidePerformanceFloatingWindow()
+    }
+
+    /// 切换性能悬浮窗
+    @objc public static func togglePerformanceFloatingWindow() {
+        ZWBLogTap.shared.togglePerformanceFloatingWindow()
+    }
+
     /// 清空所有日志
     @objc public static func clearAllLogs() {
         ZWBLogTap.shared.clearAllLogs()

@@ -2,6 +2,19 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.5] - 2026-07-23
+
+### Added
+- 新增性能悬浮窗：实时展示 FPS、CPU(App)、内存、网络请求、流量、UI 卡顿(JANK)、主线程阻塞(STALL)、电量和热状态
+- 新增绿色 `PERF` 悬浮入口：开启性能记录后默认展示面板，可点击入口隐藏/展示
+- 新增性能详细记录页：支持查看 latest-first 性能日志、复制、清空和分享 txt
+- JANK/STALL 事件写入详细日志，STALL 支持记录阻塞时主线程调用栈，方便定位业务卡顿路径
+
+### Improved
+- 性能 txt 分享改为后台生成，避免首次分享/隔空投送时叠加主线程日志读写卡顿
+- ZWB_LogTap 自身的打开、关闭、复制、分享、清空等操作会进入内部操作排除窗口，减少误计入 JANK/STALL
+- 性能面板数值使用高亮展示，静态文案保持默认颜色，提升测试扫读效率
+
 ## [1.3.4] - 2026-07-22
 
 ### Fixed

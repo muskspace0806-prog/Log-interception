@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name             = 'ZWB_LogTap'
-  s.version          = '1.3.4'
-  s.summary          = 'A powerful iOS network debugging tool for HTTP/HTTPS with manual WebSocket logging'
+  s.version          = '1.3.5'
+  s.summary          = 'A powerful iOS network and performance debugging tool for HTTP/HTTPS, WebSocket logs, and real-time app metrics'
   s.description      = <<-DESC
 ZWB_LogTap is a comprehensive iOS debugging tool that helps developers monitor and analyze network traffic in real-time.
 
@@ -14,6 +14,8 @@ Features:
 - JSON auto-formatting
 - Search and filter capabilities
 - Export logs as JSON
+- Real-time performance floating window for FPS, CPU, memory, network, JANK, STALL, battery, and thermal state
+- Export performance records as latest-first txt files
 - Zero configuration for HTTP, simple API for WebSocket
                        DESC
 
@@ -27,7 +29,7 @@ Features:
   
   s.source_files = 'ZWB_LogTap/Classes/**/*'
   
-  s.frameworks = 'UIKit', 'Foundation'
+  s.frameworks = 'UIKit', 'Foundation', 'QuartzCore'
   
   # 只在 Debug 模式下使用
   s.pod_target_xcconfig = {

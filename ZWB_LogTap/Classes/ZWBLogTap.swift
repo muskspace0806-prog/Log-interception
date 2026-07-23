@@ -18,11 +18,9 @@ public class ZWBLogTap {
     /// 悬浮按钮
     private var floatingButton: FloatingButton?
     private var mockReceiveFloatingButton: MockReceiveFloatingButton?
+    private var performanceFloatingWindow: PerformanceFloatingWindow?
+    private var performanceEntryFloatingButton: PerformanceEntryFloatingButton?
     private var mockReceiveSelectionObserver: NSObjectProtocol?
-    private var floatingButtonObservers: [NSObjectProtocol] = []
-    private var floatingButtonRepairTimer: Timer?
-    private var shouldShowFloatingButton = false
-    private var currentFloatingButtonPosition: FloatingButtonPosition = .bottomRight
 
     /// 当前显示的日志页面
     private weak var currentLogViewController: NetworkLogViewController?
@@ -103,22 +101,11 @@ public class ZWBLogTap {
         }
 
         guard !isEnabled else {
-            shouldShowFloatingButton = configuration.showFloatingButton
-            currentFloatingButtonPosition = configuration.floatingButtonPosition
-            if configuration.showFloatingButton {
-                startFloatingButtonRepairMonitor()
-                scheduleFloatingButtonRepair(after: 0)
-            } else {
-                hideFloatingButton()
-                stopFloatingButtonRepairMonitor()
-            }
             print("⚠️ ZWB_LogTap 已经启动，当前环境: \(EnvironmentManager.shared.currentEnvironment.name)")
             return
         }
 
         isEnabled = true
-        shouldShowFloatingButton = configuration.showFloatingButton
-        currentFloatingButtonPosition = configuration.floatingButtonPosition
 
         // 只在没有持久化记录时才使用 defaultEnvironment，否则恢复上次的环境
         if !EnvironmentManager.shared.hasPersisted {
@@ -144,8 +131,10 @@ public class ZWBLogTap {
 
         // 显示悬浮按钮
         if configuration.showFloatingButton {
-            startFloatingButtonRepairMonitor()
-            scheduleFloatingButtonRepair(after: 0.5)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.showFloatingButton(at: configuration.floatingButtonPosition)
+                self.updateMockReceiveFloatingButtonVisibility()
+            }
         }
         
         mockReceiveSelectionObserver = NotificationCenter.default.addObserver(
@@ -162,10 +151,9 @@ public class ZWBLogTap {
         guard isEnabled else { return }
 
         isEnabled = false
-        shouldShowFloatingButton = false
-        stopFloatingButtonRepairMonitor()
         hideFloatingButton()
         hideMockReceiveFloatingButton()
+        setPerformanceMonitorEnabled(false)
         if let observer = mockReceiveSelectionObserver {
             NotificationCenter.default.removeObserver(observer)
             mockReceiveSelectionObserver = nil
@@ -176,6 +164,7 @@ public class ZWBLogTap {
 
     /// 显示日志页面
     public func showLogViewController() {
+        PerformanceMonitor.shared.suppressInternalActivity(reason: "ZWBLogTap open log view", duration: 2.0)
         // 如果已经有显示的页面，关闭所有页面
         if let currentVC = currentLogViewController {
             // 找到 NetworkLogViewController 的 presentingViewController
@@ -213,6 +202,7 @@ public class ZWBLogTap {
 
     /// 清空所有日志
     public func clearAllLogs() {
+        PerformanceMonitor.shared.suppressInternalActivity(reason: "ZWBLogTap clear all logs", duration: 1.0)
         NetworkInterceptorManager.shared.clearAllRequests()
         WebSocketInterceptor.clearAllMessages()
         WebSocketMockReceiveStore.shared.clear()
@@ -227,6 +217,136 @@ public class ZWBLogTap {
     /// 获取所有 WebSocket 消息
     public func getAllWebSocketMessages() -> [WebSocketMessage] {
         return WebSocketInterceptor.interceptedMessages
+    }
+
+    /// 性能记录是否启用
+    public var isPerformanceMonitorEnabled: Bool {
+        return PerformanceMonitor.shared.isEnabled
+    }
+
+    /// 开启/关闭性能记录。开启后显示绿色小入口，并默认展开性能面板。
+    public func setPerformanceMonitorEnabled(_ enabled: Bool) {
+        DispatchQueue.main.async {
+            if enabled {
+                PerformanceMonitor.shared.start()
+                self.showPerformanceEntryFloatingButton()
+                self.showPerformanceFloatingWindow()
+            } else {
+                self.hidePerformanceFloatingWindow()
+                self.hidePerformanceEntryFloatingButton()
+                PerformanceMonitor.shared.stop()
+            }
+        }
+    }
+
+    /// 显示性能悬浮窗
+    public func showPerformanceFloatingWindow() {
+        PerformanceMonitor.shared.suppressInternalActivity(reason: "ZWBLogTap show performance overlay", duration: 1.0)
+        DispatchQueue.main.async {
+            if !PerformanceMonitor.shared.isEnabled {
+                PerformanceMonitor.shared.start()
+                self.showPerformanceEntryFloatingButton()
+            }
+
+            if self.performanceFloatingWindow == nil {
+                let window = PerformanceFloatingWindow()
+                window.onClose = { [weak self] in
+                    self?.hidePerformanceFloatingWindow()
+                }
+                window.onDetail = { [weak self] in
+                    self?.showPerformanceLogViewController()
+                }
+                self.performanceFloatingWindow = window
+            }
+
+            self.performanceFloatingWindow?.show()
+            PerformanceMonitor.shared.start { [weak self] snapshot in
+                self?.performanceFloatingWindow?.update(snapshot: snapshot)
+            }
+        }
+    }
+
+    /// 隐藏性能悬浮窗，不停止记录
+    public func hidePerformanceFloatingWindow() {
+        PerformanceMonitor.shared.suppressInternalActivity(reason: "ZWBLogTap hide performance overlay", duration: 1.0)
+        DispatchQueue.main.async {
+            self.performanceFloatingWindow?.hide()
+            self.performanceFloatingWindow = nil
+            if PerformanceMonitor.shared.isEnabled {
+                PerformanceMonitor.shared.start()
+            }
+        }
+    }
+
+    /// 切换性能面板显示状态
+    public func togglePerformanceFloatingWindow() {
+        if performanceFloatingWindow == nil {
+            showPerformanceFloatingWindow()
+        } else {
+            hidePerformanceFloatingWindow()
+        }
+    }
+
+    /// 查看性能记录日志
+    public func showPerformanceLogViewController() {
+        PerformanceMonitor.shared.suppressInternalActivity(reason: "ZWBLogTap open performance detail", duration: 2.0)
+        DispatchQueue.main.async {
+            guard let topVC = self.topApplicationViewController() else {
+                return
+            }
+
+            if topVC is PerformanceLogViewController {
+                return
+            }
+
+            topVC.present(PerformanceLogViewController(), animated: true)
+        }
+    }
+
+    private func topApplicationViewController() -> UIViewController? {
+        let windows: [UIWindow]
+        if #available(iOS 13.0, *) {
+            windows = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+        } else {
+            windows = UIApplication.shared.windows
+        }
+
+        let normalWindows = windows.filter { !$0.isHidden && $0.alpha > 0 && $0.windowLevel == .normal }
+        let root = normalWindows.first(where: { $0.isKeyWindow })?.rootViewController
+            ?? normalWindows.first?.rootViewController
+        return visibleViewController(from: root)
+    }
+
+    private func visibleViewController(from controller: UIViewController?) -> UIViewController? {
+        guard let controller = controller else { return nil }
+
+        if let presented = controller.presentedViewController,
+           !presented.isBeingDismissed {
+            return visibleViewController(from: presented)
+        }
+
+        if let navigation = controller as? UINavigationController {
+            return visibleViewController(from: navigation.visibleViewController ?? navigation.topViewController)
+        }
+
+        if let tab = controller as? UITabBarController {
+            return visibleViewController(from: tab.selectedViewController)
+        }
+
+        if let page = controller as? UIPageViewController,
+           let current = page.viewControllers?.first {
+            return visibleViewController(from: current)
+        }
+
+        for child in controller.children.reversed() {
+            if child.viewIfLoaded?.window != nil {
+                return visibleViewController(from: child)
+            }
+        }
+
+        return controller
     }
 
     /// 设置 WebSocket 模拟接收回调
@@ -338,7 +458,7 @@ public class ZWBLogTap {
     // MARK: - Private Methods
 
     private func showFloatingButton(at position: FloatingButtonPosition) {
-        guard let window = currentKeyWindow() else {
+        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
             return
         }
 
@@ -352,90 +472,37 @@ public class ZWBLogTap {
         floatingButton?.show(in: window)
     }
 
-    private func startFloatingButtonRepairMonitor() {
-        guard floatingButtonRepairTimer == nil else { return }
-
-        let notificationCenter = NotificationCenter.default
-        let names: [Notification.Name] = [
-            UIApplication.didBecomeActiveNotification,
-            UIWindow.didBecomeKeyNotification,
-            UIWindow.didBecomeVisibleNotification
-        ]
-
-        floatingButtonObservers = names.map { name in
-            notificationCenter.addObserver(
-                forName: name,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                self?.scheduleFloatingButtonRepair(after: 0.1)
-            }
-        }
-
-        if #available(iOS 13.0, *) {
-            let observer = notificationCenter.addObserver(
-                forName: UIScene.didActivateNotification,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                self?.scheduleFloatingButtonRepair(after: 0.1)
-            }
-            floatingButtonObservers.append(observer)
-        }
-
-        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.ensureFloatingButtonVisible()
-        }
-        floatingButtonRepairTimer = timer
-        RunLoop.main.add(timer, forMode: .common)
-    }
-
-    private func stopFloatingButtonRepairMonitor() {
-        floatingButtonRepairTimer?.invalidate()
-        floatingButtonRepairTimer = nil
-
-        floatingButtonObservers.forEach {
-            NotificationCenter.default.removeObserver($0)
-        }
-        floatingButtonObservers.removeAll()
-    }
-
-    private func scheduleFloatingButtonRepair(after delay: TimeInterval) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            self?.ensureFloatingButtonVisible()
-        }
-    }
-
-    private func ensureFloatingButtonVisible() {
-        guard isEnabled, shouldShowFloatingButton else { return }
-        showFloatingButton(at: currentFloatingButtonPosition)
-        updateMockReceiveFloatingButtonVisibility()
-    }
-
-    private func currentKeyWindow() -> UIWindow? {
-        if #available(iOS 13.0, *) {
-            return UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .filter { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
-                .flatMap { $0.windows }
-                .first { $0.isKeyWindow && !$0.isHidden && $0.alpha > 0 && $0.rootViewController != nil }
-        }
-
-        return UIApplication.shared.windows.first {
-            $0.isKeyWindow && !$0.isHidden && $0.alpha > 0 && $0.rootViewController != nil
-        }
-    }
-
     private func hideFloatingButton() {
         floatingButton?.hide()
         floatingButton = nil
+    }
+    
+    private func showPerformanceEntryFloatingButton() {
+        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+            return
+        }
+
+        if performanceEntryFloatingButton == nil {
+            let button = PerformanceEntryFloatingButton()
+            button.onTap = { [weak self] in
+                self?.togglePerformanceFloatingWindow()
+            }
+            performanceEntryFloatingButton = button
+        }
+
+        performanceEntryFloatingButton?.show(in: window)
+    }
+
+    private func hidePerformanceEntryFloatingButton() {
+        performanceEntryFloatingButton?.hide()
+        performanceEntryFloatingButton = nil
     }
     
     private func updateMockReceiveFloatingButtonVisibility() {
         DispatchQueue.main.async {
             guard self.isEnabled,
                   WebSocketMockReceiveStore.shared.selectedMessage != nil,
-                  let window = self.currentKeyWindow() else {
+                  let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
                 self.hideMockReceiveFloatingButton()
                 return
             }

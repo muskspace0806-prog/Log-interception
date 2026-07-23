@@ -118,6 +118,7 @@ class FloatingInfoWindow: UIView {
     }
     
     @objc private func closeTapped() {
+        PerformanceMonitor.shared.suppressInternalActivity(reason: "ZWBLogTap close floating info window", duration: 1.0)
         onClose?()
         hide()
     }
