@@ -18,9 +18,14 @@ public class ZWBLogTap {
     /// 悬浮按钮
     private var floatingButton: FloatingButton?
     private var mockReceiveFloatingButton: MockReceiveFloatingButton?
+    private var roomStressFloatingButton: MockReceiveFloatingButton?
     private var performanceFloatingWindow: PerformanceFloatingWindow?
     private var performanceEntryFloatingButton: PerformanceEntryFloatingButton?
     private var mockReceiveSelectionObserver: NSObjectProtocol?
+    private weak var roomStressPanelController: UIViewController?
+    private var roomStressToolEnabled = false
+    private var roomStressContextRoomId: String?
+    private var performanceToolEnabled = false
 
     /// 当前显示的日志页面
     private weak var currentLogViewController: NetworkLogViewController?
@@ -136,7 +141,7 @@ public class ZWBLogTap {
                 self.updateMockReceiveFloatingButtonVisibility()
             }
         }
-        
+
         mockReceiveSelectionObserver = NotificationCenter.default.addObserver(
             forName: .webSocketMockReceiveSelectionChanged,
             object: nil,
@@ -153,6 +158,7 @@ public class ZWBLogTap {
         isEnabled = false
         hideFloatingButton()
         hideMockReceiveFloatingButton()
+        setRoomStressToolEnabled(false)
         setPerformanceMonitorEnabled(false)
         if let observer = mockReceiveSelectionObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -197,7 +203,14 @@ public class ZWBLogTap {
         }
 
         currentLogViewController = logVC
-        topVC.present(logVC, animated: true)
+        topVC.present(logVC, animated: true) {
+            if self.roomStressToolEnabled {
+                self.showRoomStressFloatingButton()
+            }
+            if self.performanceToolEnabled {
+                self.showPerformanceEntryFloatingButton()
+            }
+        }
     }
 
     /// 清空所有日志
@@ -224,9 +237,44 @@ public class ZWBLogTap {
         return PerformanceMonitor.shared.isEnabled
     }
 
+    /// 房间压测工具是否启用
+    public var isRoomStressToolEnabled: Bool {
+        return roomStressToolEnabled
+    }
+
+    /// 外部业务手动传入的房间压测房间号，优先级高于 IM 解析
+    public var currentRoomStressRoomId: String? {
+        return roomStressContextRoomId
+    }
+
+    /// 更新房间压测上下文房间号，支持 String / Int / NSNumber；传 nil、空值或 0 表示清空上下文。
+    public func updateRoomStressContext(roomId: Any?) {
+        DispatchQueue.main.async {
+            let normalizedRoomId = Self.normalizedRoomStressRoomId(roomId)
+            guard normalizedRoomId != self.roomStressContextRoomId else { return }
+            self.roomStressContextRoomId = normalizedRoomId
+            NotificationCenter.default.post(name: .roomStressContextDidChange, object: normalizedRoomId)
+        }
+    }
+
+    /// 开启/关闭房间压测入口。开启后显示独立“压测”悬浮按钮。
+    public func setRoomStressToolEnabled(_ enabled: Bool) {
+        DispatchQueue.main.async {
+            self.roomStressToolEnabled = enabled
+            if enabled {
+                self.showRoomStressFloatingButton()
+                self.showRoomStressPanelIfNeeded()
+            } else {
+                self.dismissRoomStressPanelIfNeeded()
+                self.hideRoomStressFloatingButton()
+            }
+        }
+    }
+
     /// 开启/关闭性能记录。开启后显示绿色小入口，并默认展开性能面板。
     public func setPerformanceMonitorEnabled(_ enabled: Bool) {
         DispatchQueue.main.async {
+            self.performanceToolEnabled = enabled
             if enabled {
                 PerformanceMonitor.shared.start()
                 self.showPerformanceEntryFloatingButton()
@@ -366,18 +414,18 @@ public class ZWBLogTap {
         handler(message)
         return true
     }
-    
+
     internal func isSelectedWebSocketMockReceive(_ message: WebSocketMessage) -> Bool {
         WebSocketMockReceiveStore.shared.isSelected(message)
     }
-    
+
     @discardableResult
     internal func toggleWebSocketMockReceiveSelection(_ message: WebSocketMessage) -> Bool {
         if WebSocketMockReceiveStore.shared.isSelected(message) {
             WebSocketMockReceiveStore.shared.clear()
             return false
         }
-        
+
         WebSocketMockReceiveStore.shared.select(message)
         return true
     }
@@ -476,7 +524,7 @@ public class ZWBLogTap {
         floatingButton?.hide()
         floatingButton = nil
     }
-    
+
     private func showPerformanceEntryFloatingButton() {
         guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
             return
@@ -497,7 +545,7 @@ public class ZWBLogTap {
         performanceEntryFloatingButton?.hide()
         performanceEntryFloatingButton = nil
     }
-    
+
     private func updateMockReceiveFloatingButtonVisibility() {
         DispatchQueue.main.async {
             guard self.isEnabled,
@@ -506,7 +554,7 @@ public class ZWBLogTap {
                 self.hideMockReceiveFloatingButton()
                 return
             }
-            
+
             if self.mockReceiveFloatingButton == nil {
                 let button = MockReceiveFloatingButton()
                 button.onTap = { [weak self] in
@@ -514,39 +562,121 @@ public class ZWBLogTap {
                 }
                 self.mockReceiveFloatingButton = button
             }
-            
+
             self.mockReceiveFloatingButton?.show(in: window)
         }
     }
-    
+
     private func hideMockReceiveFloatingButton() {
         mockReceiveFloatingButton?.hide()
         mockReceiveFloatingButton = nil
     }
-    
+
+    private func showRoomStressFloatingButton() {
+        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+            return
+        }
+
+        if roomStressFloatingButton == nil {
+            let button = MockReceiveFloatingButton()
+            button.configure(title: "压测", backgroundColor: .systemPurple)
+            button.initialExtraBottomMargin = 190
+            button.onTap = { [weak self] in
+                self?.toggleRoomStressPanel()
+            }
+            roomStressFloatingButton = button
+        }
+
+        roomStressFloatingButton?.show(in: window)
+    }
+
+    private func hideRoomStressFloatingButton() {
+        roomStressFloatingButton?.hide()
+        roomStressFloatingButton = nil
+    }
+
+    private func toggleRoomStressPanel() {
+        if roomStressPanelController != nil {
+            dismissRoomStressPanelIfNeeded()
+            return
+        }
+
+        showRoomStressPanelIfNeeded()
+    }
+
+    private func showRoomStressPanelIfNeeded() {
+        guard roomStressPanelController == nil else { return }
+
+        guard let presenter = topViewControllerForRoomStressPanel() else {
+            showToastAlert(message: "无法打开房间压测面板")
+            return
+        }
+
+        let panel = RoomStressLogTapPanelViewController()
+        panel.onClose = { [weak self] in
+            self?.dismissRoomStressPanelIfNeeded()
+        }
+        panel.onExitTool = { [weak self] in
+            self?.setRoomStressToolEnabled(false)
+        }
+        let navigationController = UINavigationController(rootViewController: panel)
+        navigationController.modalPresentationStyle = .fullScreen
+        roomStressPanelController = navigationController
+        presenter.present(navigationController, animated: true)
+    }
+
+    private func dismissRoomStressPanelIfNeeded() {
+        guard let panel = roomStressPanelController else { return }
+        roomStressPanelController = nil
+        panel.dismiss(animated: true)
+    }
+
+    /// 隐藏当前 ZWB_LogTap 主面板，保留独立的压测悬浮入口。
+    public func dismissLogViewControllerIfNeeded(animated: Bool = true) {
+        guard let currentVC = currentLogViewController else { return }
+        currentLogViewController = nil
+        if let presenting = currentVC.presentingViewController {
+            presenting.dismiss(animated: animated)
+        } else {
+            currentVC.dismiss(animated: animated)
+        }
+    }
+
+    private func topViewControllerForRoomStressPanel() -> UIViewController? {
+        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }),
+              var topVC = window.rootViewController else {
+            return nil
+        }
+
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        return topVC
+    }
+
     private func triggerSelectedWebSocketMockReceiveFromFloatingButton() {
         guard let message = WebSocketMockReceiveStore.shared.selectedMessage else {
             showToastAlert(message: "未选择 IM 模拟接收消息")
             return
         }
-        
+
         guard triggerWebSocketMockReceive(message) else {
             showToastAlert(message: "未配置 IM 模拟接收处理入口")
             return
         }
     }
-    
+
     private func showToastAlert(message: String) {
         guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }),
               var topVC = window.rootViewController else {
             print("⚠️ \(message)")
             return
         }
-        
+
         while let presented = topVC.presentedViewController {
             topVC = presented
         }
-        
+
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         topVC.present(alert, animated: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
@@ -558,9 +688,38 @@ public class ZWBLogTap {
     internal func clearCurrentViewController() {
         currentLogViewController = nil
     }
+
+    private static func normalizedRoomStressRoomId(_ value: Any?) -> String? {
+        guard let value else { return nil }
+        let text: String
+        switch value {
+        case let string as String:
+            text = string
+        case let number as NSNumber:
+            text = number.stringValue
+        case let int as Int:
+            text = "\(int)"
+        case let int64 as Int64:
+            text = "\(int64)"
+        case let uint as UInt:
+            text = "\(uint)"
+        default:
+            text = String(describing: value)
+        }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, Int(trimmed) != 0 else {
+            return nil
+        }
+        return trimmed
+    }
 }
 
 // MARK: - Convenience Methods
+
+extension Notification.Name {
+    static let roomStressContextDidChange = Notification.Name("ZWBLogTapRoomStressContextDidChange")
+}
 
 public extension ZWBLogTap {
 

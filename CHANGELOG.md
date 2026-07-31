@@ -2,6 +2,19 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.6] - 2026-07-31
+
+### Added
+- 新增房间压测工具：支持从 IM 样本中选择消息，按 QPS 和持续时间进行普通/随机模拟接收压测
+- 新增独立“压测”悬浮入口，可在 App 页面隐藏/展示房间压测面板
+- 新增 `updateRoomStressContext(roomId:)` 业务兜底接口，支持手动传入 `String`、`Int`、`NSNumber` 房间号
+- 房间压测报告支持导出整体配置、样本、注入统计和实时性能采样摘要
+
+### Improved
+- 房间压测默认从 `enterWithOpenChatRoom` IM 的 `roomId` 自动识别当前房间，兼容 `res_data.data.room_info.roomId`
+- IM 新增记录会通知房间压测面板自动重载，切房后无需重新打开页面
+- IM 样本 cell 展示 `first/second`、礼物名、礼物 ID、数量、类型、全麦标记和连击数
+
 ## [1.3.5] - 2026-07-23
 
 ### Added

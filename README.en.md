@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.5-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.6-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.5-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.6-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, environment switching, response decryption, IM message replay, weak-network simulation, crash logs, memory monitoring, and floating debug access.
 
@@ -21,6 +21,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 - AES-128-CBC response decryption with per-environment configuration.
 - URL filters for hiding noisy requests.
 - IM message replay into your business message handler.
+- Room stress testing from captured IM samples, with QPS/duration controls, normal/random replay modes, real-time performance metrics, and report export.
 - Weak-network simulation including offline, throttling, and delay.
 - Crash log capture and memory monitoring.
 - Real-time performance floating window for FPS, CPU(App), memory, network requests, traffic, UI JANK, main-thread STALL, battery, and thermal state.
@@ -37,7 +38,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 ### CocoaPods
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.5', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.6', :configurations => ['Debug']
 ```
 
 ### Swift Package Manager
@@ -52,7 +53,7 @@ Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.5")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.6")
 ]
 ```
 
@@ -114,7 +115,7 @@ Since **v1.3.3**, ZWB_LogTap fully supports Objective-C projects through the `ZW
 ### Installation (Podfile)
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.5', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.6', :configurations => ['Debug']
 ```
 
 ### Basic Usage
@@ -238,6 +239,26 @@ NSString *envName = [ZWBLogTapOC currentEnvironmentName];
                                 error:@"Connection timeout"];
 ```
 
+### Room Stress Testing
+
+Room stress testing shows an independent floating `Stress` entry. It collects IM samples from recorded received WebSocket messages, replays selected samples at the configured QPS and duration, supports normal and randomized replay modes, records real-time performance samples, and exports a compact report. By default, ZWB_LogTap detects the current room from the `enterWithOpenChatRoom` IM `roomId`, including structures such as `res_data.data.room_info.roomId`.
+
+```swift
+// Enable / disable the room stress floating entry.
+ZWBLogTap.shared.setRoomStressToolEnabled(true)
+ZWBLogTap.shared.setRoomStressToolEnabled(false)
+```
+
+If your project uses a different IM structure, or room switching does not go through `enterWithOpenChatRoom`, pass the room id manually as a fallback. `String`, `Int`, and `NSNumber` are supported. Passing `nil`, an empty string, or `0` clears the context.
+
+```swift
+// After entering or switching rooms.
+ZWBLogTap.shared.updateRoomStressContext(roomId: roomId)
+
+// When leaving the room.
+ZWBLogTap.shared.updateRoomStressContext(roomId: nil)
+```
+
 ### SocketRocket Integration (OC)
 
 ```objc
@@ -312,6 +333,19 @@ BOOL running = [ZWBLogTapOC isEnabled];
 ---
 
 ## Changelog
+
+### [1.3.6] - 2026-07-31
+
+#### Added
+- Added room stress testing from captured IM samples, with QPS and duration controls for normal/random mock receive replay.
+- Added an independent `Stress` floating entry that can show or hide the room stress panel from the host app.
+- Added `updateRoomStressContext(roomId:)` as a business-side fallback API for `String`, `Int`, and `NSNumber` room ids.
+- Room stress reports now include configuration, selected samples, injection counts, and real-time performance summaries.
+
+#### Improved
+- Room stress testing detects the current room from the `enterWithOpenChatRoom` IM `roomId` by default, including `res_data.data.room_info.roomId`.
+- New IM records notify the room stress panel to reload automatically, so room switching does not require reopening the panel.
+- IM sample cells show `first/second`, gift name, gift id, gift count, gift type, whole-mic flag, and combo count.
 
 ### [1.3.5] - 2026-07-23
 

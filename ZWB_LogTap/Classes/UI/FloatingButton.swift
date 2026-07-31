@@ -166,12 +166,9 @@ class FloatingButton: UIButton {
     
     // 显示按钮
     func show(in view: UIView) {
-        if superview === view {
-            view.bringSubviewToFront(self)
+        if superview != nil {
             return
         }
-
-        removeFromSuperview()
         
         view.addSubview(self)
         

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'ZWB_LogTap'
-  s.version          = '1.3.5'
+  s.version          = '1.3.6'
   s.summary          = 'A powerful iOS network and performance debugging tool for HTTP/HTTPS, WebSocket logs, and real-time app metrics'
   s.description      = <<-DESC
 ZWB_LogTap is a comprehensive iOS debugging tool that helps developers monitor and analyze network traffic in real-time.
@@ -9,6 +9,7 @@ Features:
 - Intercept all URLSession and Alamofire HTTP/HTTPS requests automatically
 - Manual WebSocket logging API (stable and crash-free)
 - Replay and persist one selected received WebSocket message to app-side IM handlers for UI debugging
+- Room stress testing from captured IM samples with QPS/duration controls, normal/random replay, live metrics, and report export
 - Beautiful floating button UI
 - Detailed request/response inspection
 - JSON auto-formatting
