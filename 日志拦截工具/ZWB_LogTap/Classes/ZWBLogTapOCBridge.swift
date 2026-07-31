@@ -179,6 +179,38 @@ import UIKit
         ZWBLogTap.shared.togglePerformanceFloatingWindow()
     }
 
+    // MARK: - 房间压测
+
+    /// 房间压测工具是否启用
+    @objc public static var isRoomStressToolEnabled: Bool {
+        return ZWBLogTap.shared.isRoomStressToolEnabled
+    }
+
+    /// 当前房间压测上下文房间号
+    @objc public static var currentRoomStressRoomId: String? {
+        return ZWBLogTap.shared.currentRoomStressRoomId
+    }
+
+    /// 开启/关闭房间压测入口
+    @objc public static func setRoomStressToolEnabled(_ enabled: Bool) {
+        ZWBLogTap.shared.setRoomStressToolEnabled(enabled)
+    }
+
+    /// 更新房间压测上下文房间号（字符串）
+    @objc public static func updateRoomStressContext(roomId: String?) {
+        ZWBLogTap.shared.updateRoomStressContext(roomId: roomId)
+    }
+
+    /// 更新房间压测上下文房间号（数字）
+    @objc public static func updateRoomStressContext(roomIdNumber: NSNumber?) {
+        ZWBLogTap.shared.updateRoomStressContext(roomId: roomIdNumber)
+    }
+
+    /// 清空房间压测上下文房间号
+    @objc public static func clearRoomStressContext() {
+        ZWBLogTap.shared.updateRoomStressContext(roomId: nil)
+    }
+
     /// 清空所有日志
     @objc public static func clearAllLogs() {
         ZWBLogTap.shared.clearAllLogs()

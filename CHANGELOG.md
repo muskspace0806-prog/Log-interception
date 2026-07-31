@@ -2,6 +2,11 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.9] - 2026-07-31
+
+### Added
+- 新增 OC 房间压测桥接接口：开关入口、读取当前房间、字符串/数字房间号更新和清空上下文
+
 ## [1.3.8] - 2026-07-31
 
 ### Added
