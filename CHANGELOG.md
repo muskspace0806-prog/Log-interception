@@ -2,6 +2,14 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.8] - 2026-07-31
+
+### Added
+- 新增 OC 桥接接口 `logWebSocketReceiveWithWebSocket:message:` 和 `logWebSocketReceiveDataWithWebSocket:data:`，OC 项目可一行接入 SocketRocket delegate 回放
+
+### Fixed
+- 修正 README OC 示例，避免将 `SRWebSocket` 误传给 `logWebSocketReceiveWithUrl:message:` 导致 `-[SRWebSocket length]` 崩溃
+
 ## [1.3.7] - 2026-07-31
 
 ### Added

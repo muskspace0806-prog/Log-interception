@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.7-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.8-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.7-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.8-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -113,7 +113,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.3.7', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.8', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -126,7 +126,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.7")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.8")
 ]
 ```
 
@@ -524,7 +524,7 @@ ZWB_LogTap 从 **1.3.3** 起通过 `ZWBLogTapOC` 桥接类，让纯 OC 项目或
 ### 安装（Podfile）
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.7', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.8', :configurations => ['Debug']
 ```
 
 ### 基础启动
@@ -672,8 +672,8 @@ NSString *envName = [ZWBLogTapOC currentEnvironmentName];
 
 - (void)webSocket:(SRWebSocket *)webSocket didReceiveMessage:(id)message {
     // 记录接收（只需一行）
-    [ZWBLogTapOC logWebSocketReceiveWithUrl:webSocket.url.absoluteString
-                                    message:[message description]];
+    [ZWBLogTapOC logWebSocketReceiveWithWebSocket:webSocket
+                                         message:[message description]];
     // 业务逻辑...
 }
 
@@ -735,7 +735,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.7', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.8', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -787,6 +787,14 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.3.8] - 2026-07-31
+
+#### Added
+- ✅ 新增 OC 桥接接口 `logWebSocketReceiveWithWebSocket:message:` 和 `logWebSocketReceiveDataWithWebSocket:data:`
+
+#### Fixed
+- ✅ 修正 README OC 示例，避免将 `SRWebSocket` 误传给 `logWebSocketReceiveWithUrl:message:` 导致 `-[SRWebSocket length]` 崩溃
 
 ### [1.3.7] - 2026-07-31
 

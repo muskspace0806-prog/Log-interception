@@ -240,9 +240,19 @@ import UIKit
         ZWBLogTap.logWebSocketReceive(url: url, message: message)
     }
 
+    /// 记录 WebSocket 接收消息（String），并登记真实 WebSocket 实例供房间压测 delegate 回放使用
+    @objc public static func logWebSocketReceive(webSocket: AnyObject, message: String) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
+    }
+
     /// 记录 WebSocket 接收消息（Data）
     @objc public static func logWebSocketReceiveData(url: String, data: Data) {
         ZWBLogTap.logWebSocketReceive(url: url, message: data)
+    }
+
+    /// 记录 WebSocket 接收消息（Data），并登记真实 WebSocket 实例供房间压测 delegate 回放使用
+    @objc public static func logWebSocketReceiveData(webSocket: AnyObject, data: Data) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: data)
     }
 
     /// 记录 WebSocket 断开连接
