@@ -126,12 +126,11 @@ public class ZWBLogTap {
             print("✅ HTTP 拦截已启动")
         }
 
-        // 启动 WebSocket 拦截（已禁用）
+        // 启动 WebSocket 拦截
         if configuration.interceptWebSocket {
-            print("⚠️ WebSocket 拦截功能已禁用（技术限制）")
-            print("⚠️ 建议使用 Charles/Proxyman 等专业工具调试 WebSocket")
-            // WebSocketInterceptor.shared.startIntercepting()
-            // WebSocketInterceptor.maxRecords = configuration.maxRecords
+            WebSocketInterceptor.shared.startIntercepting()
+            WebSocketInterceptor.maxRecords = configuration.maxRecords
+            print("✅ WebSocket 拦截已启动")
         }
 
         // 显示悬浮按钮
@@ -403,11 +402,27 @@ public class ZWBLogTap {
         webSocketMockReceiveHandler = handler
     }
 
+    /// 注册房间压测使用的真实 WebSocket 实例
+    /// - Parameter webSocket: 业务当前活跃的 SRWebSocket 实例
+    public func registerRoomStressWebSocket(_ webSocket: AnyObject) {
+        WebSocketInterceptor.registerActiveSocket(webSocket)
+    }
+
+    /// 移除房间压测使用的真实 WebSocket 实例
+    /// - Parameter webSocket: 已关闭或失败的 SRWebSocket 实例
+    public func unregisterRoomStressWebSocket(_ webSocket: AnyObject) {
+        WebSocketInterceptor.unregisterActiveSocket(webSocket)
+    }
+
     /// 触发 WebSocket 模拟接收
     /// - Parameter message: 要重放的接收消息
     /// - Returns: 是否已配置并触发回调
     @discardableResult
     internal func triggerWebSocketMockReceive(_ message: WebSocketMessage) -> Bool {
+        if WebSocketInterceptor.replayReceiveByDelegate(message) {
+            return true
+        }
+
         guard let handler = webSocketMockReceiveHandler else {
             return false
         }
@@ -451,6 +466,16 @@ public class ZWBLogTap {
     ///   - url: WebSocket URL
     ///   - message: 接收的消息（String 或 Data）
     public static func logWebSocketReceive(url: String, message: Any) {
+        WebSocketInterceptor.logReceive(url: url, data: message)
+    }
+
+    /// 记录 WebSocket 接收消息，并登记真实 WebSocket 实例供房间压测 delegate 回放使用
+    /// - Parameters:
+    ///   - webSocket: 业务当前收到消息的 WebSocket 实例
+    ///   - message: 接收的消息（String 或 Data）
+    public static func logWebSocketReceive(webSocket: AnyObject, message: Any) {
+        WebSocketInterceptor.registerActiveSocket(webSocket)
+        let url = (webSocket.value(forKey: "url") as? URL)?.absoluteString ?? ""
         WebSocketInterceptor.logReceive(url: url, data: message)
     }
 

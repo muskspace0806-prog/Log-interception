@@ -15,6 +15,8 @@ class WebSocketInterceptor {
     // WebSocket 消息记录 - 使用 NSLock 保护
     private static var _interceptedMessages: [WebSocketMessage] = []
     private static let messagesLock = NSRecursiveLock()
+    private static var activeSockets: [ObjectIdentifier: AnyObject] = [:]
+    private static var isRoomStressReplaying = false
     static var maxRecords = 1000
 
     // 线程安全的读取（返回反转后的数组，最新的在前面）
@@ -56,6 +58,56 @@ class WebSocketInterceptor {
         defer { messagesLock.unlock() }
 
         _interceptedMessages = []
+    }
+
+    // MARK: - Room Stress Replay
+
+    // 记录当前活跃 SocketRocket 实例，压测回放时优先复用真实 delegate 链路
+    static func registerActiveSocket(_ socket: AnyObject) {
+        messagesLock.lock()
+        defer { messagesLock.unlock() }
+        activeSockets[ObjectIdentifier(socket)] = socket
+    }
+
+    // 移除已关闭的 SocketRocket 实例
+    static func unregisterActiveSocket(_ socket: AnyObject) {
+        messagesLock.lock()
+        defer { messagesLock.unlock() }
+        activeSockets.removeValue(forKey: ObjectIdentifier(socket))
+    }
+
+    // 压测模拟接收时不写入 LogTap 日志，避免污染样本列表
+    private static func performRoomStressReplay(_ block: () -> Void) {
+        isRoomStressReplaying = true
+        defer { isRoomStressReplaying = false }
+        block()
+    }
+
+    // 通过 SRWebSocketDelegate.webSocket(_:didReceiveMessage:) 直接回放到真实业务收包链路
+    static func replayReceiveByDelegate(_ message: WebSocketMessage) -> Bool {
+        messagesLock.lock()
+        let sockets = Array(activeSockets.values)
+        messagesLock.unlock()
+
+        let targetSocket = sockets.first { socket in
+            guard let url = socket.value(forKey: "url") as? URL else { return false }
+            return url.absoluteString == message.url
+        } ?? sockets.first
+
+        guard let socket = targetSocket,
+              let delegate = socket.value(forKey: "delegate") as AnyObject? else {
+            return false
+        }
+
+        let selector = NSSelectorFromString("webSocket:didReceiveMessage:")
+        guard delegate.responds(to: selector) else {
+            return false
+        }
+
+        performRoomStressReplay {
+            _ = delegate.perform(selector, with: socket, with: message.dataString)
+        }
+        return true
     }
 
     private init() {}
@@ -103,7 +155,7 @@ class WebSocketInterceptor {
                 targetClass: socketClass,
                 originalSelector: NSSelectorFromString("open"),
                 implementation: { (socket: AnyObject) in
-                    // 什么都不做，直接返回
+                    WebSocketInterceptor.registerActiveSocket(socket)
                 }
             )
             print("  ✅ Hook open 成功（空实现）")
@@ -121,6 +173,7 @@ class WebSocketInterceptor {
                 targetClass: socketClass,
                 originalSelector: NSSelectorFromString("send:"),
                 implementation: { (socket: AnyObject, data: Any) in
+                    WebSocketInterceptor.registerActiveSocket(socket)
                     print("🔍 [WebSocket] send: 被调用")
                     let urlString = (socket.value(forKey: "url") as? URL)?.absoluteString ?? "unknown"
 
@@ -148,6 +201,7 @@ class WebSocketInterceptor {
                 targetClass: socketClass,
                 originalSelector: NSSelectorFromString("sendString:"),
                 implementation: { (socket: AnyObject, string: Any) in
+                    WebSocketInterceptor.registerActiveSocket(socket)
                     print("🔍 [WebSocket] sendString: 被调用")
                     let urlString = (socket.value(forKey: "url") as? URL)?.absoluteString ?? "unknown"
                     WebSocketInterceptor.logSend(url: urlString, data: string)
@@ -163,6 +217,7 @@ class WebSocketInterceptor {
                 targetClass: socketClass,
                 originalSelector: NSSelectorFromString("sendData:"),
                 implementation: { (socket: AnyObject, data: Any) in
+                    WebSocketInterceptor.registerActiveSocket(socket)
                     print("🔍 [WebSocket] sendData: 被调用")
                     let urlString = (socket.value(forKey: "url") as? URL)?.absoluteString ?? "unknown"
                     WebSocketInterceptor.logSend(url: urlString, data: data)
@@ -184,6 +239,7 @@ class WebSocketInterceptor {
                 targetClass: socketClass,
                 originalSelector: NSSelectorFromString("close"),
                 implementation: { (socket: AnyObject) in
+                    WebSocketInterceptor.unregisterActiveSocket(socket)
                     let urlString = (socket.value(forKey: "url") as? URL)?.absoluteString ?? "unknown"
                     WebSocketInterceptor.logDisconnect(url: urlString, reason: nil)
                 }
@@ -278,6 +334,7 @@ class WebSocketInterceptor {
 
     // 记录接收消息
     static func logReceive(url: String, data: Any) {
+        guard !isRoomStressReplaying else { return }
         let id = generateSafeID()
         let message = WebSocketMessage(
             id: id,

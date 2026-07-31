@@ -2,6 +2,15 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.7] - 2026-07-31
+
+### Added
+- 新增 `logWebSocketReceive(webSocket:message:)` 接口，SocketRocket 项目只需替换接收日志一行即可登记真实 WebSocket
+
+### Improved
+- 房间压测优先通过真实 `SRWebSocketDelegate.webSocket(_:didReceiveMessage:)` 回放接收消息，减少各项目额外适配代码
+- 压测回放期间自动跳过 LogTap 接收日志记录，避免回放消息污染已采集样本
+
 ## [1.3.6] - 2026-07-31
 
 ### Added
