@@ -239,11 +239,15 @@ NSString *envName = [ZWBLogTapOC currentEnvironmentName];
                                 error:@"Connection timeout"];
 ```
 
+> Note: the first parameter of `logWebSocketReceiveWithUrl:message:` must be a URL string. Do not pass an `SRWebSocket` object there. For SocketRocket room stress replay, use `logWebSocketReceiveWithWebSocket:message:` in the delegate callback.
+
 ### Room Stress Testing
 
 Room stress testing shows an independent floating `Stress` entry. It collects IM samples from recorded received WebSocket messages, replays selected samples at the configured QPS and duration, supports normal and randomized replay modes, records real-time performance samples, and exports a compact report. By default, ZWB_LogTap detects the current room from the `enterWithOpenChatRoom` IM `roomId`, including structures such as `res_data.data.room_info.roomId`.
 
 For SocketRocket projects, prefer the Swift receive logging overload inside `webSocket(_:didReceiveMessage:)`. It records the message and registers the real `SRWebSocket` instance, so room stress replay can call the original `SRWebSocketDelegate.webSocket(_:didReceiveMessage:)` path. Replay-generated receive logs are skipped automatically to avoid polluting the sample list.
+
+For Objective-C SocketRocket projects, use `logWebSocketReceiveWithWebSocket:message:` instead of passing the socket object to `logWebSocketReceiveWithUrl:message:`.
 
 ```swift
 func webSocket(_ webSocket: SRWebSocket, didReceiveMessage message: Any) {

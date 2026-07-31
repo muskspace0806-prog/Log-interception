@@ -649,6 +649,8 @@ NSString *envName = [ZWBLogTapOC currentEnvironmentName];
                                 error:@"连接超时"];
 ```
 
+> 注意：`logWebSocketReceiveWithUrl:message:` 的第一个参数必须是 URL 字符串，不要传 `SRWebSocket` 对象。SocketRocket 项目如果需要房间压测回放，请使用下面的 `logWebSocketReceiveWithWebSocket:message:`。
+
 ### 在 SocketRocket delegate 中使用（OC）
 
 ```objc
