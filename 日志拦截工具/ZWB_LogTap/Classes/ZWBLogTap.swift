@@ -479,6 +479,17 @@ public class ZWBLogTap {
         WebSocketInterceptor.logReceive(url: url, data: message)
     }
 
+    /// 记录 WebSocket 接收消息，并分离展示消息和压测回放原始消息
+    /// - Parameters:
+    ///   - webSocket: 业务当前收到消息的 WebSocket 实例
+    ///   - displayMessage: LogTap 列表展示、样本解析用消息，通常传解密后的 JSON
+    ///   - replayMessage: 房间压测回放用原始 socket 消息，会传回业务 didReceiveMessage
+    public static func logWebSocketReceive(webSocket: AnyObject, displayMessage: Any, replayMessage: Any) {
+        WebSocketInterceptor.registerActiveSocket(webSocket)
+        let url = (webSocket.value(forKey: "url") as? URL)?.absoluteString ?? ""
+        WebSocketInterceptor.logReceive(url: url, data: displayMessage, replayData: replayMessage)
+    }
+
     /// 记录 WebSocket 断开连接
     /// - Parameters:
     ///   - url: WebSocket URL

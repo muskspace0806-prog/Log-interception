@@ -105,7 +105,7 @@ class WebSocketInterceptor {
         }
 
         performRoomStressReplay {
-            _ = delegate.perform(selector, with: socket, with: message.dataString)
+            _ = delegate.perform(selector, with: socket, with: message.roomStressReplayDataString)
         }
         return true
     }
@@ -333,7 +333,7 @@ class WebSocketInterceptor {
     }
 
     // 记录接收消息
-    static func logReceive(url: String, data: Any) {
+    static func logReceive(url: String, data: Any, replayData: Any? = nil) {
         guard !isRoomStressReplaying else { return }
         let id = generateSafeID()
         let message = WebSocketMessage(
@@ -341,6 +341,7 @@ class WebSocketInterceptor {
             url: url,
             type: .receive,
             data: data,
+            replayData: replayData,
             timestamp: Date()
         )
         addMessage(message)

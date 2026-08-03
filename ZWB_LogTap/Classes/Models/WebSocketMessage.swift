@@ -40,10 +40,11 @@ public struct WebSocketMessage: Identifiable, Codable {
     public let url: String
     public let type: WebSocketMessageType
     public let dataString: String  // 改为直接存储字符串
+    public let replayDataString: String?  // 压测回放用原始消息，展示和回放可分离
     public let timestamp: Date
 
     // 初始化时转换 data
-    public init(id: String, url: String, type: WebSocketMessageType, data: Any?, timestamp: Date) {
+    public init(id: String, url: String, type: WebSocketMessageType, data: Any?, replayData: Any? = nil, timestamp: Date) {
         self.id = id
         self.url = url
         self.type = type
@@ -51,14 +52,21 @@ public struct WebSocketMessage: Identifiable, Codable {
 
         // 安全地转换为字符串
         self.dataString = Self.convertDataToString(data)
+        self.replayDataString = replayData.map { Self.convertDataToString($0) }
     }
 
-    public init(id: String, url: String, type: WebSocketMessageType, dataString: String, timestamp: Date) {
+    public init(id: String, url: String, type: WebSocketMessageType, dataString: String, replayDataString: String? = nil, timestamp: Date) {
         self.id = id
         self.url = url
         self.type = type
         self.dataString = dataString
+        self.replayDataString = replayDataString
         self.timestamp = timestamp
+    }
+
+    // 压测回放优先使用原始消息；没有原始消息时兼容旧数据使用展示消息
+    public var roomStressReplayDataString: String {
+        return replayDataString ?? dataString
     }
 
     // 静态方法：安全地转换数据为字符串 - 极简版本
@@ -198,6 +206,11 @@ public struct WebSocketMessage: Identifiable, Codable {
 
     // 生成随机压测副本：只替换消息里已经存在的字段，不新增字段，避免破坏不同项目 IM 结构
     public func randomizedGiftStressMessage() -> WebSocketMessage {
+        // 展示消息和回放消息分离时，原始回放消息可能是加密包，无法安全随机改写，直接沿用原始样本。
+        guard replayDataString == nil else {
+            return self
+        }
+
         guard let payload = Self.jsonObject(from: dataString) else {
             return self
         }

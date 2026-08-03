@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.9-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.10-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.9-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.10-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, environment switching, response decryption, IM message replay, weak-network simulation, crash logs, memory monitoring, and floating debug access.
 
@@ -38,7 +38,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 ### CocoaPods
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.9', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
 ```
 
 ### Swift Package Manager
@@ -53,7 +53,7 @@ Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.9")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.10")
 ]
 ```
 
@@ -115,7 +115,7 @@ Since **v1.3.3**, ZWB_LogTap fully supports Objective-C projects through the `ZW
 ### Installation (Podfile)
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.9', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
 ```
 
 ### Basic Usage
@@ -249,6 +249,8 @@ For SocketRocket projects, prefer the Swift receive logging overload inside `web
 
 For Objective-C SocketRocket projects, use `logWebSocketReceiveWithWebSocket:message:` instead of passing the socket object to `logWebSocketReceiveWithUrl:message:`.
 
+If your business receive path decrypts the raw socket message first, use the display/replay split API: pass decrypted JSON as the display message for readable samples, and pass the original `message` as the replay message to avoid double-decryption during stress replay.
+
 ```swift
 func webSocket(_ webSocket: SRWebSocket, didReceiveMessage message: Any) {
     ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
@@ -309,9 +311,12 @@ Objective-C projects can use:
 }
 
 - (void)webSocket:(SRWebSocket *)webSocket didReceiveMessage:(id)message {
-    // Log receive (just one line)
+    NSDictionary *dict = [self decryptFromData:message];
+
+    // Recommended: display decrypted JSON, replay the original socket message.
     [ZWBLogTapOC logWebSocketReceiveWithWebSocket:webSocket
-                                         message:[message description]];
+                                   displayMessage:[dict yy_modelToJSONString]
+                                    replayMessage:message];
     // Your business logic...
 }
 
@@ -361,6 +366,11 @@ BOOL running = [ZWBLogTapOC isEnabled];
 ---
 
 ## Changelog
+
+### [1.3.10] - 2026-08-03
+
+#### Added
+- Added display/replay split WebSocket receive APIs so samples can show decrypted JSON while room stress replay uses the original socket message.
 
 ### [1.3.9] - 2026-07-31
 

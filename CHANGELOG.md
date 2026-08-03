@@ -2,6 +2,11 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.10] - 2026-08-03
+
+### Added
+- 新增展示消息/压测回放消息分离接口，支持解密 JSON 展示、原始 socket 消息回放，避免业务二次解密
+
 ## [1.3.9] - 2026-07-31
 
 ### Added

@@ -277,6 +277,11 @@ import UIKit
         ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
     }
 
+    /// 记录 WebSocket 接收消息（String），展示消息和压测回放原始消息分离
+    @objc public static func logWebSocketReceive(webSocket: AnyObject, displayMessage: String, replayMessage: Any) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, displayMessage: displayMessage, replayMessage: replayMessage)
+    }
+
     /// 记录 WebSocket 接收消息（Data）
     @objc public static func logWebSocketReceiveData(url: String, data: Data) {
         ZWBLogTap.logWebSocketReceive(url: url, message: data)
@@ -285,6 +290,11 @@ import UIKit
     /// 记录 WebSocket 接收消息（Data），并登记真实 WebSocket 实例供房间压测 delegate 回放使用
     @objc public static func logWebSocketReceiveData(webSocket: AnyObject, data: Data) {
         ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: data)
+    }
+
+    /// 记录 WebSocket 接收消息（Data），展示数据和压测回放原始消息分离
+    @objc public static func logWebSocketReceiveData(webSocket: AnyObject, displayData: Data, replayData: Any) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, displayMessage: displayData, replayMessage: replayData)
     }
 
     /// 记录 WebSocket 断开连接
