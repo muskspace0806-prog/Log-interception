@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.10-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.11-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.10-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.11-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -113,7 +113,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -126,7 +126,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.10")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.11")
 ]
 ```
 
@@ -374,8 +374,8 @@ class MyWebSocketManager: NSObject, SRWebSocketDelegate {
     
     // 接收消息
     func webSocket(_ webSocket: SRWebSocket, didReceiveMessage message: Any) {
-        // 📝 记录接收；SocketRocket 项目推荐使用此接口，房间压测可复用真实 delegate 链路
-        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
+        // 📝 记录接收；显式传入 delegate 后，房间压测可稳定回放到真实业务收包链路
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: self, message: message)
         
         // 你的业务逻辑
         if let text = message as? String {
@@ -409,8 +409,8 @@ ZWBLogTap.logWebSocketSend(url: "wss://example.com", message: "Hello")
 // 3. 记录接收
 ZWBLogTap.logWebSocketReceive(url: "wss://example.com", message: "World")
 
-// SocketRocket 项目推荐：记录接收并登记真实 webSocket，房间压测可直接回放到业务 delegate
-ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
+// SocketRocket 项目推荐：记录接收并显式登记业务 delegate，房间压测可直接回放到业务收包链路
+ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: self, message: message)
 
 // 4. 记录断开
 ZWBLogTap.logWebSocketDisconnect(url: "wss://example.com", reason: "正常关闭")
@@ -435,7 +435,7 @@ ZWBLogTap.shared.setWebSocketMockReceiveHandler { message in
 
 开启房间压测后，会显示独立“压测”悬浮入口。工具会从已记录的 IM 中采集样本，支持普通压测、随机压测、QPS/持续时间控制、实时性能采样和报告导出。默认会根据 `enterWithOpenChatRoom` IM 中的 `roomId` 识别当前房间，兼容 `res_data.data.room_info.roomId` 等结构。
 
-SocketRocket 项目建议在 `webSocket(_:didReceiveMessage:)` 中使用 `logWebSocketReceive(webSocket:message:)`，这样压测时会优先复用真实 `SRWebSocketDelegate.webSocket(_:didReceiveMessage:)` 链路。压测回放期间 LogTap 会自动跳过本次回放产生的接收日志，避免污染样本列表。
+SocketRocket 项目建议在 `webSocket(_:didReceiveMessage:)` 中使用 `logWebSocketReceive(webSocket:delegate:message:)`，这样压测时会优先复用显式登记的真实业务 delegate，稳定回放到 `SRWebSocketDelegate.webSocket(_:didReceiveMessage:)` 链路。旧的 `logWebSocketReceive(webSocket:message:)` 仍然保留，并会继续尝试从 SocketRocket 内部读取 delegate 作为兜底。压测回放期间 LogTap 会自动跳过本次回放产生的接收日志，避免污染样本列表。
 
 如果业务接收入口第一步会解密原始 socket 消息，建议使用“展示消息 + 回放消息”分离接口：展示消息传解密后的 JSON，样本列表更直观；回放消息传原始 `message`，压测时不会被业务二次解密。
 
@@ -541,7 +541,7 @@ ZWB_LogTap 从 **1.3.3** 起通过 `ZWBLogTapOC` 桥接类，让纯 OC 项目或
 ### 安装（Podfile）
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
 ```
 
 ### 基础启动
@@ -694,6 +694,7 @@ NSString *envName = [ZWBLogTapOC currentEnvironmentName];
 
     // 推荐：展示解密后的 JSON，压测回放原始 socket message
     [ZWBLogTapOC logWebSocketReceiveWithWebSocket:webSocket
+                                         delegate:self
                                    displayMessage:dict.yy_modelToJSONString
                                     replayMessage:message];
     // 业务逻辑...
@@ -757,7 +758,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -809,6 +810,11 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.3.11] - 2026-08-03
+
+#### Added
+- ✅ 新增显式登记 WebSocket delegate 的接收日志接口，提升房间压测在不同 SocketRocket 项目中的回放稳定性
 
 ### [1.3.10] - 2026-08-03
 

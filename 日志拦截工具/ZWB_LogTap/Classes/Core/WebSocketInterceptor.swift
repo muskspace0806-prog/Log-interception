@@ -15,7 +15,17 @@ class WebSocketInterceptor {
     // WebSocket 消息记录 - 使用 NSLock 保护
     private static var _interceptedMessages: [WebSocketMessage] = []
     private static let messagesLock = NSRecursiveLock()
-    private static var activeSockets: [ObjectIdentifier: AnyObject] = [:]
+    private final class ActiveSocketContext {
+        let socket: AnyObject
+        weak var delegate: AnyObject?
+
+        init(socket: AnyObject, delegate: AnyObject?) {
+            self.socket = socket
+            self.delegate = delegate
+        }
+    }
+
+    private static var activeSockets: [ObjectIdentifier: ActiveSocketContext] = [:]
     private static var isRoomStressReplaying = false
     static var maxRecords = 1000
 
@@ -63,10 +73,19 @@ class WebSocketInterceptor {
     // MARK: - Room Stress Replay
 
     // 记录当前活跃 SocketRocket 实例，压测回放时优先复用真实 delegate 链路
-    static func registerActiveSocket(_ socket: AnyObject) {
+    static func registerActiveSocket(_ socket: AnyObject, delegate: AnyObject? = nil) {
         messagesLock.lock()
         defer { messagesLock.unlock() }
-        activeSockets[ObjectIdentifier(socket)] = socket
+
+        let key = ObjectIdentifier(socket)
+        if let context = activeSockets[key] {
+            if let delegate = delegate {
+                context.delegate = delegate
+            }
+            return
+        }
+
+        activeSockets[key] = ActiveSocketContext(socket: socket, delegate: delegate)
     }
 
     // 移除已关闭的 SocketRocket 实例
@@ -86,26 +105,27 @@ class WebSocketInterceptor {
     // 通过 SRWebSocketDelegate.webSocket(_:didReceiveMessage:) 直接回放到真实业务收包链路
     static func replayReceiveByDelegate(_ message: WebSocketMessage) -> Bool {
         messagesLock.lock()
-        let sockets = Array(activeSockets.values)
+        let contexts = Array(activeSockets.values)
         messagesLock.unlock()
 
-        let targetSocket = sockets.first { socket in
-            guard let url = socket.value(forKey: "url") as? URL else { return false }
+        let targetContext = contexts.first { context in
+            guard let url = context.socket.value(forKey: "url") as? URL else { return false }
             return url.absoluteString == message.url
-        } ?? sockets.first
+        } ?? contexts.first
 
-        guard let socket = targetSocket,
-              let delegate = socket.value(forKey: "delegate") as AnyObject? else {
+        guard let context = targetContext else {
             return false
         }
 
+        let socket = context.socket
+        let delegate = context.delegate ?? (socket.value(forKey: "delegate") as AnyObject?)
         let selector = NSSelectorFromString("webSocket:didReceiveMessage:")
-        guard delegate.responds(to: selector) else {
+        guard let replayDelegate = delegate, replayDelegate.responds(to: selector) else {
             return false
         }
 
         performRoomStressReplay {
-            _ = delegate.perform(selector, with: socket, with: message.roomStressReplayDataString)
+            _ = replayDelegate.perform(selector, with: socket, with: message.roomStressReplayDataString)
         }
         return true
     }

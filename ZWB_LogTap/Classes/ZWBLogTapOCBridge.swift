@@ -277,9 +277,19 @@ import UIKit
         ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
     }
 
+    /// 记录 WebSocket 接收消息（String），并显式登记业务 delegate 供房间压测回放使用
+    @objc public static func logWebSocketReceive(webSocket: AnyObject, delegate: AnyObject, message: String) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: delegate, message: message)
+    }
+
     /// 记录 WebSocket 接收消息（String），展示消息和压测回放原始消息分离
     @objc public static func logWebSocketReceive(webSocket: AnyObject, displayMessage: String, replayMessage: Any) {
         ZWBLogTap.logWebSocketReceive(webSocket: webSocket, displayMessage: displayMessage, replayMessage: replayMessage)
+    }
+
+    /// 记录 WebSocket 接收消息（String），显式登记业务 delegate，并分离展示消息和压测回放原始消息
+    @objc public static func logWebSocketReceive(webSocket: AnyObject, delegate: AnyObject, displayMessage: String, replayMessage: Any) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: delegate, displayMessage: displayMessage, replayMessage: replayMessage)
     }
 
     /// 记录 WebSocket 接收消息（Data）
@@ -292,9 +302,19 @@ import UIKit
         ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: data)
     }
 
+    /// 记录 WebSocket 接收消息（Data），并显式登记业务 delegate 供房间压测回放使用
+    @objc public static func logWebSocketReceiveData(webSocket: AnyObject, delegate: AnyObject, data: Data) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: delegate, message: data)
+    }
+
     /// 记录 WebSocket 接收消息（Data），展示数据和压测回放原始消息分离
     @objc public static func logWebSocketReceiveData(webSocket: AnyObject, displayData: Data, replayData: Any) {
         ZWBLogTap.logWebSocketReceive(webSocket: webSocket, displayMessage: displayData, replayMessage: replayData)
+    }
+
+    /// 记录 WebSocket 接收消息（Data），显式登记业务 delegate，并分离展示数据和压测回放原始消息
+    @objc public static func logWebSocketReceiveData(webSocket: AnyObject, delegate: AnyObject, displayData: Data, replayData: Any) {
+        ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: delegate, displayMessage: displayData, replayMessage: replayData)
     }
 
     /// 记录 WebSocket 断开连接

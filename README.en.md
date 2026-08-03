@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.10-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.11-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.10-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.11-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, environment switching, response decryption, IM message replay, weak-network simulation, crash logs, memory monitoring, and floating debug access.
 
@@ -38,7 +38,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 ### CocoaPods
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
 ```
 
 ### Swift Package Manager
@@ -53,7 +53,7 @@ Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.10")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.11")
 ]
 ```
 
@@ -115,7 +115,7 @@ Since **v1.3.3**, ZWB_LogTap fully supports Objective-C projects through the `ZW
 ### Installation (Podfile)
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.10', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
 ```
 
 ### Basic Usage
@@ -239,21 +239,21 @@ NSString *envName = [ZWBLogTapOC currentEnvironmentName];
                                 error:@"Connection timeout"];
 ```
 
-> Note: the first parameter of `logWebSocketReceiveWithUrl:message:` must be a URL string. Do not pass an `SRWebSocket` object there. For SocketRocket room stress replay, use `logWebSocketReceiveWithWebSocket:message:` in the delegate callback.
+> Note: the first parameter of `logWebSocketReceiveWithUrl:message:` must be a URL string. Do not pass an `SRWebSocket` object there. For SocketRocket room stress replay, use `logWebSocketReceiveWithWebSocket:delegate:message:` in the delegate callback.
 
 ### Room Stress Testing
 
 Room stress testing shows an independent floating `Stress` entry. It collects IM samples from recorded received WebSocket messages, replays selected samples at the configured QPS and duration, supports normal and randomized replay modes, records real-time performance samples, and exports a compact report. By default, ZWB_LogTap detects the current room from the `enterWithOpenChatRoom` IM `roomId`, including structures such as `res_data.data.room_info.roomId`.
 
-For SocketRocket projects, prefer the Swift receive logging overload inside `webSocket(_:didReceiveMessage:)`. It records the message and registers the real `SRWebSocket` instance, so room stress replay can call the original `SRWebSocketDelegate.webSocket(_:didReceiveMessage:)` path. Replay-generated receive logs are skipped automatically to avoid polluting the sample list.
+For SocketRocket projects, prefer the Swift receive logging overload with an explicit delegate inside `webSocket(_:didReceiveMessage:)`. It records the message and registers the real business delegate, so room stress replay can call the original `SRWebSocketDelegate.webSocket(_:didReceiveMessage:)` path reliably. The older `logWebSocketReceive(webSocket:message:)` overload remains available and still tries to read SocketRocket's internal delegate as a fallback. Replay-generated receive logs are skipped automatically to avoid polluting the sample list.
 
-For Objective-C SocketRocket projects, use `logWebSocketReceiveWithWebSocket:message:` instead of passing the socket object to `logWebSocketReceiveWithUrl:message:`.
+For Objective-C SocketRocket projects, use `logWebSocketReceiveWithWebSocket:delegate:message:` instead of passing the socket object to `logWebSocketReceiveWithUrl:message:`.
 
 If your business receive path decrypts the raw socket message first, use the display/replay split API: pass decrypted JSON as the display message for readable samples, and pass the original `message` as the replay message to avoid double-decryption during stress replay.
 
 ```swift
 func webSocket(_ webSocket: SRWebSocket, didReceiveMessage message: Any) {
-    ZWBLogTap.logWebSocketReceive(webSocket: webSocket, message: message)
+    ZWBLogTap.logWebSocketReceive(webSocket: webSocket, delegate: self, message: message)
     // Keep your existing business parsing logic unchanged.
 }
 ```
@@ -315,6 +315,7 @@ Objective-C projects can use:
 
     // Recommended: display decrypted JSON, replay the original socket message.
     [ZWBLogTapOC logWebSocketReceiveWithWebSocket:webSocket
+                                         delegate:self
                                    displayMessage:[dict yy_modelToJSONString]
                                     replayMessage:message];
     // Your business logic...
@@ -366,6 +367,11 @@ BOOL running = [ZWBLogTapOC isEnabled];
 ---
 
 ## Changelog
+
+### [1.3.11] - 2026-08-03
+
+#### Added
+- Added explicit WebSocket delegate receive logging APIs to make room stress replay more reliable across different SocketRocket projects.
 
 ### [1.3.10] - 2026-08-03
 

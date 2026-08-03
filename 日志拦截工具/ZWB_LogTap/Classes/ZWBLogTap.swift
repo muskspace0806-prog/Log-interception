@@ -408,6 +408,14 @@ public class ZWBLogTap {
         WebSocketInterceptor.registerActiveSocket(webSocket)
     }
 
+    /// 注册房间压测使用的真实 WebSocket 实例和业务 delegate
+    /// - Parameters:
+    ///   - webSocket: 业务当前活跃的 SRWebSocket 实例
+    ///   - delegate: 实现 webSocket(_:didReceiveMessage:) 的业务对象
+    public func registerRoomStressWebSocket(_ webSocket: AnyObject, delegate: AnyObject) {
+        WebSocketInterceptor.registerActiveSocket(webSocket, delegate: delegate)
+    }
+
     /// 移除房间压测使用的真实 WebSocket 实例
     /// - Parameter webSocket: 已关闭或失败的 SRWebSocket 实例
     public func unregisterRoomStressWebSocket(_ webSocket: AnyObject) {
@@ -479,6 +487,17 @@ public class ZWBLogTap {
         WebSocketInterceptor.logReceive(url: url, data: message)
     }
 
+    /// 记录 WebSocket 接收消息，并显式登记业务 delegate 供房间压测回放使用
+    /// - Parameters:
+    ///   - webSocket: 业务当前收到消息的 WebSocket 实例
+    ///   - delegate: 实现 webSocket(_:didReceiveMessage:) 的业务对象
+    ///   - message: 接收的消息（String 或 Data）
+    public static func logWebSocketReceive(webSocket: AnyObject, delegate: AnyObject, message: Any) {
+        WebSocketInterceptor.registerActiveSocket(webSocket, delegate: delegate)
+        let url = (webSocket.value(forKey: "url") as? URL)?.absoluteString ?? ""
+        WebSocketInterceptor.logReceive(url: url, data: message)
+    }
+
     /// 记录 WebSocket 接收消息，并分离展示消息和压测回放原始消息
     /// - Parameters:
     ///   - webSocket: 业务当前收到消息的 WebSocket 实例
@@ -486,6 +505,18 @@ public class ZWBLogTap {
     ///   - replayMessage: 房间压测回放用原始 socket 消息，会传回业务 didReceiveMessage
     public static func logWebSocketReceive(webSocket: AnyObject, displayMessage: Any, replayMessage: Any) {
         WebSocketInterceptor.registerActiveSocket(webSocket)
+        let url = (webSocket.value(forKey: "url") as? URL)?.absoluteString ?? ""
+        WebSocketInterceptor.logReceive(url: url, data: displayMessage, replayData: replayMessage)
+    }
+
+    /// 记录 WebSocket 接收消息，显式登记业务 delegate，并分离展示消息和压测回放原始消息
+    /// - Parameters:
+    ///   - webSocket: 业务当前收到消息的 WebSocket 实例
+    ///   - delegate: 实现 webSocket(_:didReceiveMessage:) 的业务对象
+    ///   - displayMessage: LogTap 列表展示、样本解析用消息，通常传解密后的 JSON
+    ///   - replayMessage: 房间压测回放用原始 socket 消息，会传回业务 didReceiveMessage
+    public static func logWebSocketReceive(webSocket: AnyObject, delegate: AnyObject, displayMessage: Any, replayMessage: Any) {
+        WebSocketInterceptor.registerActiveSocket(webSocket, delegate: delegate)
         let url = (webSocket.value(forKey: "url") as? URL)?.absoluteString ?? ""
         WebSocketInterceptor.logReceive(url: url, data: displayMessage, replayData: replayMessage)
     }

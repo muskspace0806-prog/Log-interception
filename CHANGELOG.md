@@ -2,6 +2,11 @@
 
 All notable changes to ZWB_LogTap will be documented in this file.
 
+## [1.3.11] - 2026-08-03
+
+### Added
+- 新增显式登记 WebSocket delegate 的接收日志接口，提升房间压测在不同 SocketRocket 项目中的回放稳定性
+
 ## [1.3.10] - 2026-08-03
 
 ### Added
