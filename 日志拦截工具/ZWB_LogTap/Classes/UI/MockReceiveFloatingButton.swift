@@ -55,6 +55,17 @@ final class MockReceiveFloatingButton: UIButton {
 
     func configure(title: String, backgroundColor: UIColor) {
         setTitle(title, for: .normal)
+        setImage(nil, for: .normal)
+        self.backgroundColor = backgroundColor.withAlphaComponent(0.92)
+    }
+
+    /// 配置单图标悬浮入口，避免房间压测按钮展示文字造成视觉歧义。
+    func configure(imageName: String, backgroundColor: UIColor) {
+        setTitle(nil, for: .normal)
+        setImage(UIImage(systemName: imageName), for: .normal)
+        tintColor = .white
+        imageView?.contentMode = .scaleAspectFit
+        contentEdgeInsets = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
         self.backgroundColor = backgroundColor.withAlphaComponent(0.92)
     }
 

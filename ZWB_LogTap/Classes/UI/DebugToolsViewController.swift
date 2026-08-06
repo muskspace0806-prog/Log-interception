@@ -243,6 +243,8 @@ final class RoomStressLogTapPanelViewController: UIViewController {
 
     var onClose: (() -> Void)?
     var onExitTool: (() -> Void)?
+    /// 系统 pageSheet 手势关闭后的回调，用于同步外层悬浮入口状态。
+    var onDidDismissByGesture: (() -> Void)?
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -353,12 +355,6 @@ final class RoomStressLogTapPanelViewController: UIViewController {
             style: .plain,
             target: self,
             action: #selector(closePanel)
-        )
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "退出",
-            style: .done,
-            target: self,
-            action: #selector(exitTool)
         )
     }
 
@@ -706,10 +702,6 @@ final class RoomStressLogTapPanelViewController: UIViewController {
         onClose?()
     }
 
-    @objc private func exitTool() {
-        onExitTool?()
-    }
-
     @objc private func showSelectedTypes() {
         let selectedMessages = samples.filter { selectedSampleIds.contains($0.id) }
         let alert = UIAlertController(title: "已选类型", message: nil, preferredStyle: .actionSheet)
@@ -751,7 +743,11 @@ final class RoomStressLogTapPanelViewController: UIViewController {
 
         stressTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
             guard let endDate = Self.sharedStressEndDate, Date() < endDate else {
-                self?.finishStressSession(timer: timer)
+                if let self = self {
+                    self.finishStressSession(timer: timer)
+                } else {
+                    Self.finishSharedStressSession(timer: timer)
+                }
                 return
             }
 
@@ -767,8 +763,12 @@ final class RoomStressLogTapPanelViewController: UIViewController {
                 Self.sharedInjectedCount += 1
             } else {
                 Self.sharedFailedCount += 1
-                self?.finishStressSession(timer: timer)
-                self?.showAlert(title: "缺少入口", message: "未配置 IM 模拟接收处理入口。")
+                if let self = self {
+                    self.finishStressSession(timer: timer)
+                    self.showAlert(title: "缺少入口", message: "未配置 IM 模拟接收处理入口。")
+                } else {
+                    Self.finishSharedStressSession(timer: timer)
+                }
             }
             self?.updateMetrics()
         }
@@ -940,14 +940,20 @@ final class RoomStressLogTapPanelViewController: UIViewController {
     }
 
     private func finishStressSession(timer: Timer?) {
-        timer?.invalidate()
-        stressTimer = nil
-        stressEndDate = nil
-        sampleTimer?.invalidate()
-        sampleTimer = nil
         recordMetricSample()
-        Self.sharedSessionEndDate = Date()
+        Self.finishSharedStressSession(timer: timer)
         updateMetrics()
+    }
+
+    /// 页面已释放时也要清理共享压测状态，避免重新进入仍显示压测中。
+    private static func finishSharedStressSession(timer: Timer?) {
+        timer?.invalidate()
+        sharedStressTimer?.invalidate()
+        sharedStressTimer = nil
+        sharedStressEndDate = nil
+        sharedSampleTimer?.invalidate()
+        sharedSampleTimer = nil
+        sharedSessionEndDate = Date()
     }
 
     private func recordMetricSample() {
@@ -1154,6 +1160,13 @@ final class RoomStressLogTapPanelViewController: UIViewController {
             return nil
         }
         return String(text[valueRange])
+    }
+}
+
+extension RoomStressLogTapPanelViewController: UIAdaptivePresentationControllerDelegate {
+
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        onDidDismissByGesture?()
     }
 }
 

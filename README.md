@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.11-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.12-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.11-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.12-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 一个功能强大的 iOS 网络调试工具，支持 HTTP/HTTPS 和 WebSocket 实时拦截与查看。
 
@@ -113,7 +113,7 @@
 
 ```ruby
 # 仅在 Debug 模式下使用
-pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.12', :configurations => ['Debug']
 ```
 
 然后运行：
@@ -126,7 +126,7 @@ pod install
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.11")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.12")
 ]
 ```
 
@@ -541,7 +541,7 @@ ZWB_LogTap 从 **1.3.3** 起通过 `ZWBLogTapOC` 桥接类，让纯 OC 项目或
 ### 安装（Podfile）
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.12', :configurations => ['Debug']
 ```
 
 ### 基础启动
@@ -758,7 +758,7 @@ ZWBLogTap.shared.start()
 ### 2. 在 Podfile 中限制配置
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.12', :configurations => ['Debug']
 ```
 
 ### 3. 内存管理
@@ -810,6 +810,14 @@ override class func canInit(with request: URLRequest) -> Bool {
 5. 开启 Pull Request
 
 ## 📝 更新日志
+
+### [1.3.12] - 2026-08-06
+
+#### Fixed
+- ✅ 修复房间压测面板关闭后共享计时器残留导致重新进入仍显示压测中的问题
+- ✅ 优化房间压测面板为 pageSheet 模态，支持手势下拉关闭
+- ✅ 房间压测面板展示时隐藏主悬浮入口和压测入口，关闭后按状态恢复，避免入口语义误解
+- ✅ 移除房间压测面板右上角退出按钮，并将压测悬浮入口改为单图标展示
 
 ### [1.3.11] - 2026-08-03
 

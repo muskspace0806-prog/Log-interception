@@ -23,9 +23,13 @@ public class ZWBLogTap {
     private var performanceEntryFloatingButton: PerformanceEntryFloatingButton?
     private var mockReceiveSelectionObserver: NSObjectProtocol?
     private weak var roomStressPanelController: UIViewController?
+    /// 记录房间压测面板展示状态，兼容 pageSheet 手势关闭后 weak 控制器提前释放。
+    private var isRoomStressPanelVisible = false
     private var roomStressToolEnabled = false
     private var roomStressContextRoomId: String?
     private var performanceToolEnabled = false
+    /// 缓存启动配置里的主悬浮按钮位置，关闭压测面板后用于恢复主入口。
+    private var floatingButtonPosition: FloatingButtonPosition = .bottomRight
 
     /// 当前显示的日志页面
     private weak var currentLogViewController: NetworkLogViewController?
@@ -111,6 +115,7 @@ public class ZWBLogTap {
         }
 
         isEnabled = true
+        floatingButtonPosition = configuration.floatingButtonPosition
 
         // 只在没有持久化记录时才使用 defaultEnvironment，否则恢复上次的环境
         if !EnvironmentManager.shared.hasPersisted {
@@ -646,7 +651,7 @@ public class ZWBLogTap {
 
         if roomStressFloatingButton == nil {
             let button = MockReceiveFloatingButton()
-            button.configure(title: "压测", backgroundColor: .systemPurple)
+            button.configure(imageName: "speedometer", backgroundColor: .systemPurple)
             button.initialExtraBottomMargin = 190
             button.onTap = { [weak self] in
                 self?.toggleRoomStressPanel()
@@ -672,13 +677,15 @@ public class ZWBLogTap {
     }
 
     private func showRoomStressPanelIfNeeded() {
-        guard roomStressPanelController == nil else { return }
+        guard !isRoomStressPanelVisible else { return }
 
         guard let presenter = topViewControllerForRoomStressPanel() else {
             showToastAlert(message: "无法打开房间压测面板")
             return
         }
 
+        hideFloatingButton()
+        hideRoomStressFloatingButton()
         let panel = RoomStressLogTapPanelViewController()
         panel.onClose = { [weak self] in
             self?.dismissRoomStressPanelIfNeeded()
@@ -687,15 +694,42 @@ public class ZWBLogTap {
             self?.setRoomStressToolEnabled(false)
         }
         let navigationController = UINavigationController(rootViewController: panel)
-        navigationController.modalPresentationStyle = .fullScreen
+        navigationController.modalPresentationStyle = .pageSheet
+        navigationController.isModalInPresentation = false
+        navigationController.presentationController?.delegate = panel
+        panel.onDidDismissByGesture = { [weak self] in
+            self?.roomStressPanelController = nil
+            self?.isRoomStressPanelVisible = false
+            self?.restoreRoomStressFloatingButtonIfNeeded()
+            self?.restoreFloatingButtonIfNeeded()
+        }
         roomStressPanelController = navigationController
+        isRoomStressPanelVisible = true
         presenter.present(navigationController, animated: true)
     }
 
     private func dismissRoomStressPanelIfNeeded() {
-        guard let panel = roomStressPanelController else { return }
+        guard let panel = roomStressPanelController else {
+            isRoomStressPanelVisible = false
+            restoreFloatingButtonIfNeeded()
+            return
+        }
         roomStressPanelController = nil
-        panel.dismiss(animated: true)
+        isRoomStressPanelVisible = false
+        panel.dismiss(animated: true) {
+            self.restoreRoomStressFloatingButtonIfNeeded()
+            self.restoreFloatingButtonIfNeeded()
+        }
+    }
+
+    private func restoreRoomStressFloatingButtonIfNeeded() {
+        guard isEnabled, roomStressToolEnabled else { return }
+        showRoomStressFloatingButton()
+    }
+
+    private func restoreFloatingButtonIfNeeded() {
+        guard isEnabled else { return }
+        showFloatingButton(at: floatingButtonPosition)
     }
 
     /// 隐藏当前 ZWB_LogTap 主面板，保留独立的压测悬浮入口。

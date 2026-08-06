@@ -4,12 +4,12 @@
 
 # ZWB_LogTap
 
-[![Version](https://img.shields.io/badge/version-1.3.11-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
+[![Version](https://img.shields.io/badge/version-1.3.12-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Platform](https://img.shields.io/badge/platform-iOS%2013.0%2B-lightgrey.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![ObjC](https://img.shields.io/badge/Objective--C-compatible-blue.svg)](https://github.com/muskspace0806-prog/Log-interception)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CocoaPods](https://img.shields.io/badge/pod-1.3.11-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
+[![CocoaPods](https://img.shields.io/badge/pod-1.3.12-blue.svg)](https://cocoapods.org/pods/ZWB_LogTap)
 
 A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, environment switching, response decryption, IM message replay, weak-network simulation, crash logs, memory monitoring, and floating debug access.
 
@@ -38,7 +38,7 @@ A powerful iOS network debugging tool for real-time HTTP/HTTPS inspection, envir
 ### CocoaPods
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.12', :configurations => ['Debug']
 ```
 
 ### Swift Package Manager
@@ -53,7 +53,7 @@ Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.11")
+    .package(url: "https://github.com/muskspace0806-prog/Log-interception.git", from: "1.3.12")
 ]
 ```
 
@@ -115,7 +115,7 @@ Since **v1.3.3**, ZWB_LogTap fully supports Objective-C projects through the `ZW
 ### Installation (Podfile)
 
 ```ruby
-pod 'ZWB_LogTap', '~> 1.3.11', :configurations => ['Debug']
+pod 'ZWB_LogTap', '~> 1.3.12', :configurations => ['Debug']
 ```
 
 ### Basic Usage
@@ -367,6 +367,14 @@ BOOL running = [ZWBLogTapOC isEnabled];
 ---
 
 ## Changelog
+
+### [1.3.12] - 2026-08-06
+
+#### Fixed
+- Fixed stale shared room-stress timers that could make the panel still appear running after reopening.
+- Changed the room-stress panel to pageSheet presentation with gesture dismissal.
+- Hid the main floating entry and room-stress entry while the panel is visible, then restored them after dismissal to avoid ambiguous entry behavior.
+- Removed the room-stress panel Exit button and changed the stress floating entry to an icon-only button.
 
 ### [1.3.11] - 2026-08-03
 
